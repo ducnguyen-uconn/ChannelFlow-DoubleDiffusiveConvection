@@ -1,0 +1,9 @@
+Command:  ./build/modules/ddc/programs/ddc_findeigenvals -Pr 10 -Ra 100000 -Le 100 -Rr 2 -Nx 200 -Ny 81 -Nz 10 -Lx 2 -Lz 0.02 -Ta 0 -Tb 1 -Sa 0 -Sb 1 
+PWD:      /mnt/c/Users/jms24002/OneDrive - University of Connecticut/Desktop/Thermohaline-Shear_Instability/4-ChannelFlow2_DirectNumerialSimulation
+Host:     DucNguyen, PID: 240705
+Time:     2024-10-23 08:56:56
+Version:  2.0.2
+Git rev:  ad37ef3022351d4e4a7a6c274c59a88605ad19e8
+Compiler: GNU 11.4.0
+
+

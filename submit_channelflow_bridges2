@@ -1,0 +1,26 @@
+#!/bin/bash
+### partition 1: RM [default,use one or more full nodes], 
+### partition 2: RM-shared [use only part of one node] 
+### partition 3: RM-512 [use one or more full 512GB nodes]
+#SBATCH --partition=RM-shared # 
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
+#SBATCH --time=1:00:00
+#SBATCH --mail-user=duc.nguyen@uconn.edu      # Destination email address
+#SBATCH --mail-type=ALL                       # Event(s) that triggers email notification
+#SBATCH --job-name=channelflow_job
+#SBATCH --output=channelflow_output_%j
+export SLURM_EXPORT_ENV=ALL
+#export I_MPI_FABRICS=shm,tcp
+
+##the slurm number to restart simulation... This need full state to be stored.
+SUBMITDIR=$SLURM_SUBMIT_DIR
+WORKDIR=/ocean/projects/phy240052p/vnguyen9/testing/channelflow_$SLURM_JOB_ID
+mkdir -p "$WORKDIR" && cp -r {./ddc,makefile,CMakeLists.txt} "$WORKDIR" && cp submit_channelflow_bridges2 "$WORKDIR" && cd "$WORKDIR" || exit -1
+
+source activate base
+conda activate channelflow
+mpiexec -n $SLURM_NTASKS python3 RBC.py
+
+cd "$SUBMITDIR" && cp channelflow_output_$SLURM_JOB_ID "$WORKDIR"
+

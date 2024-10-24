@@ -1,0 +1,41 @@
+#!/bin/bash
+### SBATCH --partition=debug
+###SBATCH --partition=general
+### SBATCH --partition=lo-core # This can be as long as 7 days
+#SBATCH --partition=priority
+#SBATCH --account=chl23026      # chl23026
+#SBATCH --qos=chl23026          # chl23026, me_epyc
+###SBATCH --constraint=epyc128 # This is optional
+#SBATCH --nodes=1
+#SBATCH --ntasks=16
+#SBATCH --time=01:00:00
+#SBATCH --mail-user=duc.nguyen@uconn.edu      # Destination email address
+#SBATCH --mail-type=END                       # Event(s) that triggers email notification
+#SBATCH --job-name=channelflow_job
+#SBATCH --output=channelflow_output_%j
+export SLURM_EXPORT_ENV=ALL
+#export I_MPI_FABRICS=shm,tcp
+
+##the slurm number to restart simulation... This need full state to be stored.
+SUBMITDIR=$SLURM_SUBMIT_DIR
+WORKDIR=/scratch/chl23026/jms24002/channelflow_$SLURM_JOB_ID
+mkdir -p "$WORKDIR" && cp -r {./ddc,makefile,CMakeLists.txt}  "$WORKDIR" && cp submit_channelflow_uconn "$WORKDIR" && cd "$WORKDIR" || exit -1
+
+# load available modules on UCONN HPC
+# module unload gcc
+# module unload zlib
+# module load fftw3/3.3.10
+# module load fftw3/openmpi/gcc/64/3.3.10
+# module load cmake/3.23.2
+# module load netcdf/4.9.2
+# module load openmpi/5.0.5
+# module load hdf5/1.14.3
+
+source activate base
+conda activate channelflow
+make clone
+make run
+mpiexec -n $SLURM_NTASKS ./build/modules/ddc/examples/2d_diffusive_convection
+
+cd "$SUBMITDIR" && cp channelflow_output_$SLURM_JOB_ID "$WORKDIR"
+
