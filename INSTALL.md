@@ -47,7 +47,7 @@ Sometimes, we can get a few errors. Here, I will list some common errors, which 
 ```bash  
 -DCMAKE_CXX_FLAGS_RELEASE:STRING=" -fPIC "
 ```
-- If get errors regarding library finding (e.g. `libfftw3.a`, `libfftw3_mpi.a`) when compiling. We need to rebuild FFTW3 by hand with both flags `--enable-mpi` and `--enable-shared` after `./configure`. Pls read detailed instructions for installation [here](https://www.fftw.org/fftw3_doc/FFTW-MPI-Installation.html).
+- If get errors regarding library finding (e.g. `libfftw3.a`, `libfftw3_mpi.a`) when compiling. We need to rebuild FFTW3 by hand with both flags `--enable-mpi` and `--enable-shared` behind `./configure`. Pls read detailed instructions for installation [here](https://www.fftw.org/fftw3_doc/FFTW-MPI-Installation.html).
 
 Channelflow supports, beneath other standard cmake flags, the following options
 
@@ -60,11 +60,13 @@ Channelflow supports, beneath other standard cmake flags, the following options
 |`-DWITH_STATIC`          | ON/OFF  | OFF       | build static libraries (also enables linking to static libraries) |
 |`-DWITH_PYTHON`          | ON/OFF  | OFF       | build a python wrapper for flowfields, disabled by default because it requires boost-python |
 |`-DWITH_HDF5CXX`         |  ON/OFF | OFF       | enable legacy .h5 file format (using HDF5 C++)                    |
-
+|`-DWITH_DDC`          | ON/OFF  | ON       | build double-diffusive convection |
 
 A sample installation, with all features enabled, might look like this:
 ```bash 
 cmake ../channelflow -DCMAKE_BUILD_TYPE=release -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx -DCMAKE_CXX_FLAGS_RELEASE:STRING=" -fPIC -lfftw3 -lm " -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_PYTHON=ON -DWITH_HDF5CXX=ON
 make -j4
-sudo make install
+# make install # if you need to build shared library on local machine
 ```
+
+Also, you may need to read this [instruction](HPCsetup.md) for setup on a HPC via miniconda.

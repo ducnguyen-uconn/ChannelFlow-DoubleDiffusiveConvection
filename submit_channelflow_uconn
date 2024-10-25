@@ -7,7 +7,7 @@
 #SBATCH --qos=chl23026          # chl23026, me_epyc
 ###SBATCH --constraint=epyc128 # This is optional
 #SBATCH --nodes=1
-#SBATCH --ntasks=16
+#SBATCH --ntasks=32
 #SBATCH --time=01:00:00
 #SBATCH --mail-user=duc.nguyen@uconn.edu      # Destination email address
 #SBATCH --mail-type=END                       # Event(s) that triggers email notification
@@ -33,9 +33,10 @@ mkdir -p "$WORKDIR" && cp -r {./ddc,makefile,CMakeLists.txt}  "$WORKDIR" && cp s
 
 source activate base
 conda activate channelflow
-make clone
-make run
-mpiexec -n $SLURM_NTASKS ./build/modules/ddc/examples/2d_diffusive_convection
+
+make builduconn
+
+mpiexec -n $SLURM_NTASKS ./build/modules/ddc/validations/yang2021jfm_case3_2d
 
 cd "$SUBMITDIR" && cp channelflow_output_$SLURM_JOB_ID "$WORKDIR"
 
