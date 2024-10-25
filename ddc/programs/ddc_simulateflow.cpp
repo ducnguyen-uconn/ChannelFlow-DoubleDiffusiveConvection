@@ -41,6 +41,11 @@ int main(int argc, char* argv[]) {
         
 
         args.section("Program options");
+        const string outdir = args.getpath("-o", "--outdir", "data/", "output directory");
+        const string ulabel = args.getstr("-ul", "--ulabel", "u", "output velocity field prefix");
+        const string tlabel = args.getstr("-tl", "--tlabel", "t", "output temperature field prefix");
+        const string slabel = args.getstr("-sl", "--slabel", "s", "output salinity field prefix");
+
         const int Nx_ = args.getint("-Nx", "--Nx", 32, "# x gridpoints");
         const int Ny_ = args.getint("-Ny", "--Ny", 31, "# y gridpoints");
         const int Nz_ = args.getint("-Nz", "--Nz", 32, "# z gridpoints");
@@ -51,6 +56,9 @@ int main(int argc, char* argv[]) {
        
         args.check();
         args.save("./");
+        mkdir(outdir);
+        args.save(outdir);
+        flags.save(outdir);
         
 
         TimeStep dt(flags);
@@ -64,6 +72,7 @@ int main(int argc, char* argv[]) {
         cout << "Le = " << flags.Le << endl;
         cout << "Pr = " << flags.Pr << endl;
         cout << "Rrho = " << flags.Rrho << endl;
+        if(P7!=0.0)cout << "Rsep = " << flags.Rsep << endl;
         cout << "Ua = " << flags.ulowerwall << endl;
         cout << "Wa = " << flags.wlowerwall << endl;
         cout << "Ub = " << flags.uupperwall << endl;
@@ -103,7 +112,6 @@ int main(int argc, char* argv[]) {
         DDC ddc(fields, flags);
         cout << "done" << endl;
 
-        mkdir("data");
         Real cfl = ddc.CFL(fields[0]);
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
             cout << "         t == " << t << endl;
@@ -114,13 +122,18 @@ int main(int argc, char* argv[]) {
             // cout << "     Ubulk == " << ddc.Ubulk() << endl;
 
             // Write velocity and modified pressure fields to disk
-           // fields[0].save("data/u" + i2s(int(t)));//<<--- save only fluctuations
-            // fields[1].save("data/t" + i2s(int(t)));
-            // fields[2].save("data/s" + i2s(int(t)));
+            if (P7!=0.0){
+                fields[0].save(outdir + ulabel + i2s(int(t)));//<<--- save only fluctuations
+                fields[1].save(outdir + tlabel + i2s(int(t)));
+                fields[2].save(outdir + slabel + i2s(int(t)));
+            }else{
+                FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save(outdir + ulabel + i2s(int(t)));//<<--- save total fields
+                FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save(outdir + tlabel + i2s(int(t)));
+                FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save(outdir + slabel + i2s(int(t)));
+            }
+           
 
-            FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save("data/u" + i2s(int(t)));//<<--- save total fields
-            FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save("data/t" + i2s(int(t)));
-            FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save("data/s" + i2s(int(t)));
+            
 
             // Take n steps of length dt
             ddc.advance(fields, dt.n());
