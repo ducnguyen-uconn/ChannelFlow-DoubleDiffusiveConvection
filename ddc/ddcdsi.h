@@ -33,6 +33,7 @@ enum class ddc_continuationParameter {
     Pr,
     Ra,
     Rrho,
+    Rsep,
     Le,
     Lx,
     Lz,

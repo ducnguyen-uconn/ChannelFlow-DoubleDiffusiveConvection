@@ -3,6 +3,7 @@
  */
 #include <iostream>
 using namespace std;
+#include "modules/ddc/macros.h"
 #include "modules/ddc/dde.h"
 
 namespace chflow {
@@ -14,6 +15,7 @@ void momentumNL(const FlowField& u, const FlowField& T, const FlowField& S,
     Real Pr = flags.Pr;
     Real Ra = flags.Ra;
     Real Rrho = flags.Rrho;
+    Real Rsep = flags.Rsep;
 
     // compute the nonlinear term of NSE in the usual Channelflow style
     navierstokesNL(u, Ubase, Wbase, f, tmp, flags);
@@ -24,13 +26,13 @@ void momentumNL(const FlowField& u, const FlowField& T, const FlowField& S,
     for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); mz++)
         for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); mx++)
             for (int ny = 0; ny < f.Ny(); ny++) {
-                f.cmplx(mx, ny, mz, 1) -= Pr*Ra*(Rrho-1)/Rrho*(T.cmplx(mx, ny, mz, 0)-S.cmplx(mx, ny, mz, 0));
+                f.cmplx(mx, ny, mz, 1) -= P1*P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0));
             }
     #else
     for (int ny = 0; ny < f.Ny(); ny++)
         for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); mx++)
             for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); mz++) {
-                f.cmplx(mx, ny, mz, 1) -= Pr*Ra*(Rrho-1)/Rrho*(T.cmplx(mx, ny, mz, 0)-S.cmplx(mx, ny, mz, 0));
+                f.cmplx(mx, ny, mz, 1) -= P1*P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0));
             }
     #endif
     
@@ -75,10 +77,11 @@ void temperatureNL(const FlowField& u_, const FlowField& T_,
         f.zeroPaddedModes();
 }
 
-void salinityNL(const FlowField& u_, const FlowField& S_, 
+void salinityNL(const FlowField& u_, const FlowField& T_, const FlowField& S_, 
                 ChebyCoeff Ubase, ChebyCoeff Wbase, ChebyCoeff Sbase,
                    FlowField& f, FlowField& tmp, DDCFlags flags) {
     FlowField& u = const_cast<FlowField&>(u_);
+    FlowField& T = const_cast<FlowField&>(T_);
     FlowField& S = const_cast<FlowField&>(S_);
     
      // goal: (u*grad)s
@@ -95,6 +98,26 @@ void salinityNL(const FlowField& u_, const FlowField& S_,
 
     // compute the nonlinearity (temperature advection (u*grad)S ) analogous to the convectiveNL and store in f
     dotgradScalar(u, S, f, tmp);
+
+    if(P7 != 0.0){
+        
+        for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); mz++)
+            for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); mx++){
+                ComplexChebyCoeff Tk_(f.Ny(), f.a(), f.b(), Spectral);
+                ComplexChebyCoeff Rtk_(f.Ny(), f.a(), f.b(), Spectral);
+                ComplexChebyCoeff Pyk_(f.Ny(), f.a(), f.b(), Spectral);
+                // Extract relevant Fourier modes of T: use Pk and Rxk
+                for (int ny = 0; ny < f.Ny(); ++ny)
+                    Tk_.set(ny, T.cmplx(mx, ny, mz, 0));
+
+                // (1) Put T" into in R. (Pyk_ is used as tmp workspace)
+                diff2(Tk_, Rtk_, Pyk_);
+
+                for (int ny = 0; ny < f.Ny(); ny++) {
+                    f.cmplx(mx, ny, mz, 0) -= P7*Rtk_[ny];
+                }
+            }
+    }
 
     // f -= Base;
     for (int ny = 0; ny < u.Ny(); ++ny) {
@@ -229,7 +252,7 @@ void DDE::nonlinear(const std::vector<FlowField>& infields, std::vector<FlowFiel
     // Pressure as third entry in in/outfields is not touched.
     momentumNL(infields[0], infields[1], infields[2], Ubase_,Wbase_, outfields[0], tmp_, flags_);
     temperatureNL(infields[0], infields[1], Ubase_,Wbase_,Tbase_, outfields[1], tmp_, flags_);
-    salinityNL(infields[0], infields[2], Ubase_,Wbase_,Sbase_, outfields[2], tmp_, flags_);
+    salinityNL(infields[0], infields[1], infields[2], Ubase_,Wbase_,Sbase_, outfields[2], tmp_, flags_);
 }
 
 void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields) {//infields=[u,T,S,p] and outfields[u,T,S]
@@ -287,19 +310,19 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
             const Complex Dx = infields[0].Dx(mx); // get dx
             const Complex Dz = infields[0].Dz(mz); // get dz
             for (int ny = 0; ny < Nyd_; ++ny) {
-                outfields[0].cmplx(mx, ny, mz, 0) = Pr*Ruk_[ny] - Pr*k2*uk_[ny] - Dx * Pk_[ny]; // Pr*d2(u)/dy2-Pr*nablaxz^2*(u)-dp/dx
-                outfields[0].cmplx(mx, ny, mz, 1) = Pr*Rvk_[ny] - Pr*k2*vk_[ny] - Pyk_[ny];     // Pr*d2(v)/dy2-Pr*nablaxz^2*(v)-dp/dy
-                outfields[0].cmplx(mx, ny, mz, 2) = Pr*Rwk_[ny] - Pr*k2*wk_[ny] - Dz * Pk_[ny]; // Pr*d2(w)/dy2-Pr*nablaxz^2*(w)-dp/dz
+                outfields[0].cmplx(mx, ny, mz, 0) = P1*Ruk_[ny] - P1*k2*uk_[ny] - Dx * Pk_[ny]; // Pr*d2(u)/dy2-Pr*nablaxz^2*(u)-dp/dx
+                outfields[0].cmplx(mx, ny, mz, 1) = P1*Rvk_[ny] - P1*k2*vk_[ny] - Pyk_[ny];     // Pr*d2(v)/dy2-Pr*nablaxz^2*(v)-dp/dy
+                outfields[0].cmplx(mx, ny, mz, 2) = P1*Rwk_[ny] - P1*k2*wk_[ny] - Dz * Pk_[ny]; // Pr*d2(w)/dy2-Pr*nablaxz^2*(w)-dp/dz
             }
             // (4) Add const. terms Cu=d2y2Ubase-dPdx
             if (kx == 0 && kz == 0) {
                 // L includes const dissipation term of Ubase and Wbase: nu Uyy, nu Wyy
                 if (Ubaseyy_.length() > 0)
                     for (int ny = 0; ny < My_; ++ny)
-                        outfields[0].cmplx(mx, ny, mz, 0) += Complex(Pr * Ubaseyy_[ny], 0);
+                        outfields[0].cmplx(mx, ny, mz, 0) += Complex(P1 * Ubaseyy_[ny], 0);
                 if (Wbaseyy_.length() > 0)
                     for (int ny = 0; ny < My_; ++ny)
-                        outfields[0].cmplx(mx, ny, mz, 2) += Complex(Pr * Wbaseyy_[ny], 0);
+                        outfields[0].cmplx(mx, ny, mz, 2) += Complex(P1 * Wbaseyy_[ny], 0);
 
                 // Add base pressure gradient depending on the constraint
                 if (flags_.constraint == PressureGradient) {
@@ -317,9 +340,9 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
                     ChebyCoeff Ubasey = diff(Ubase_);
                     ChebyCoeff Wbasey = diff(Wbase_);
                     if (Ubase_.length() != 0)
-                        dPdxAct += Pr * (Ubasey.eval_b() - Ubasey.eval_a()) / Ly;
+                        dPdxAct += P1 * (Ubasey.eval_b() - Ubasey.eval_a()) / Ly;
                     if (Wbase_.length() != 0)
-                        dPdzAct += Pr * (Wbasey.eval_b() - Wbasey.eval_a()) / Ly;
+                        dPdzAct += P1 * (Wbasey.eval_b() - Wbasey.eval_a()) / Ly;
                     // add press. gradient to linear term
                     outfields[0].cmplx(mx, 0, mz, 0) -= Complex(dPdxAct, 0);
                     outfields[0].cmplx(mx, 0, mz, 2) -= Complex(dPdzAct, 0);
@@ -343,7 +366,7 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
             // k2 and Dx were defined above for the current Fourier mode
             for (int ny = 0; ny < Nyd_; ++ny)
                 // from nonlinear:  - Dx*Tk_[ny]*Complex(Ubase_[ny],0)/kappa;
-                outfields[1].cmplx(mx, ny, mz, 0) = Rtk_[ny] - k2 * Tk_[ny];
+                outfields[1].cmplx(mx, ny, mz, 0) = P5*Rtk_[ny] - P5*k2 * Tk_[ny];
 
             // (4) Add const. terms [don't need this, because Ct=d2y2Tbase=0]
             if (kx == 0 && kz == 0) {
@@ -369,7 +392,7 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
             // k2 and Dx were defined above for the current Fourier mode
             for (int ny = 0; ny < Nyd_; ++ny)
                 // from nonlinear:  - Dx*Tk_[ny]*Complex(Ubase_[ny],0)/kappa;
-                outfields[2].cmplx(mx, ny, mz, 0) =  1/Le*Rsk_[ny] -  1/Le*k2*Sk_[ny];
+                outfields[2].cmplx(mx, ny, mz, 0) =  P6*Rsk_[ny] -  P6*k2*Sk_[ny];
 
             // (4) Add const. terms [don't need this, because Cs=d2y2Sbase=0]
             if (kx == 0 && kz == 0) {
@@ -598,14 +621,14 @@ void DDE::reset_lambda(std::vector<Real> lambda_t) {
             int kx = kxloc_[mx];
             for (int mz = 0; mz < Mzloc_; ++mz) {
                 int kz = kzloc_[mz];
-                Real lambda_tau = lambda_t[j] + Pr * c * (square(kx / Lx_) + square(kz / Lz_));
-                Real lambda_heat = lambda_t[j] +      c * (square(kx / Lx_) + square(kz / Lz_));
-                Real lambda_salt = lambda_t[j] + 1./Le * c * (square(kx / Lx_) + square(kz / Lz_));
+                Real lambda_tau = lambda_t[j] + P1 * c * (square(kx / Lx_) + square(kz / Lz_));
+                Real lambda_heat = lambda_t[j] + P5 * c * (square(kx / Lx_) + square(kz / Lz_));
+                Real lambda_salt = lambda_t[j] + P6 * c * (square(kx / Lx_) + square(kz / Lz_));
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz))) {
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_tau, Pr, Nyd_, flags_.taucorrection);
-                    heatsolver_[j][mx][mz] = HelmholtzSolver(Nyd_, a_, b_, lambda_heat, 1.0);
-                    saltsolver_[j][mx][mz] = HelmholtzSolver(Nyd_, a_, b_, lambda_salt, 1./Le);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_tau, P1, Nyd_, flags_.taucorrection);
+                    heatsolver_[j][mx][mz] = HelmholtzSolver(Nyd_, a_, b_, lambda_heat, P5);
+                    saltsolver_[j][mx][mz] = HelmholtzSolver(Nyd_, a_, b_, lambda_salt, P6);
                 }
             }
         }
@@ -699,7 +722,7 @@ void DDE::createConstants() {
     // constant u-term: Pr/Pe*d2/y2U0
     if (Ubaseyy_.length() > 0) {
         for (int ny = 0; ny < My_; ++ny) {
-            c[ny] = Complex(Pr * Ubaseyy_[ny], 0);
+            c[ny] = Complex(P1 * Ubaseyy_[ny], 0);
             if ((abs(c[ny]) > 1e-15) && !nonzCu_)
                 nonzCu_ = true;
         }
@@ -717,7 +740,7 @@ void DDE::createConstants() {
     // constant w-term:
     if (Wbaseyy_.length() > 0) {
         for (int ny = 0; ny < My_; ++ny) {
-            c[ny] = Complex(Pr * Wbaseyy_[ny], 0);
+            c[ny] = Complex(P1 * Wbaseyy_[ny], 0);
             if ((abs(c[ny]) > 1e-15) && !nonzCw_)
                 nonzCw_ = true;
         }
@@ -743,7 +766,7 @@ void DDE::createConstants() {
     // constant s-term:
     if (Sbaseyy_.length() > 0) {
         for (int ny = 1; ny < My_; ++ny) {
-            c[ny] = Complex(1.0/Le*Sbaseyy_[ny], 0);
+            c[ny] = Complex(P6*Sbaseyy_[ny] + P7*Tbaseyy_[ny], 0);
             if ((abs(c[ny]) > 1e-15) && !nonzCs_)
                 nonzCs_ = true;
         }
@@ -918,6 +941,7 @@ ChebyCoeff PressureGradientY(Real a, Real b, int Ny, DDCFlags flags) {
     Real Pr = flags.Pr;
     Real Ra = flags.Ra;
     Real Rrho = flags.Rrho;
+    Real Rsep = flags.Rsep;
 
     MeanConstraint constraint = flags.constraint;
     Real Vsuck = flags.Vsuck;
@@ -930,9 +954,9 @@ ChebyCoeff PressureGradientY(Real a, Real b, int Ny, DDCFlags flags) {
     } else {
         if (Vsuck < 1e-14) {
             if (dPdx < 1e-14) {
-                // for laminar flow, dxP(y) =  = Pr*Ra*(Rrho-1)/Rrho * y
-                Py[0] = Pr*Ra*(Rrho-1)/(2*Rrho);  // See documentation about base solution
-                Py[1] = Pr*Ra*(Rrho-1)/(2*Rrho);
+                // for laminar flow, dxP(y) =  = Pr*Ra*(1-1/Rrho)/2 * y
+                Py[0] = P1*P2*(P3-P4)/2;  // See documentation about base solution
+                Py[1] = P1*P1*(P3-P4)/2;
             } else {
                 cferror("Using DDC with nonzero dPdx is not implemented yet");
             }

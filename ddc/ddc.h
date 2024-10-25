@@ -9,6 +9,7 @@
 
 #include "channelflow/dns.h"
 #include "channelflow/dnsalgo.h"
+#include "modules/ddc/macros.h"
 #include "modules/ddc/ddcflags.h"
 #include "modules/ddc/dde.h"
 #include "modules/ddc/ddcdsi.h"

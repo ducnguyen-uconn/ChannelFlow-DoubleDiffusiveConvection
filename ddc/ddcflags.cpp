@@ -7,7 +7,7 @@
 
 namespace chflow {
 
-DDCFlags::DDCFlags(Real Pr_, Real Ra_, Real Le_, Real Rrho_,
+DDCFlags::DDCFlags(Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_, 
                    Real ulowerwall_, Real uupperwall_, 
                    Real wlowerwall_, Real wupperwall_,
                    Real tlowerwall_, Real tupperwall_, 
@@ -17,6 +17,8 @@ DDCFlags::DDCFlags(Real Pr_, Real Ra_, Real Le_, Real Rrho_,
       Ra(Ra_),
       Le(Le_),
       Rrho(Rrho_),
+      Rsep(Rsep_),
+
       
       
       tlowerwall(tlowerwall_),
@@ -44,6 +46,7 @@ DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     const Real Ra_ = args.getreal("-Ra", "--Rayleigh", 1000, "Thermal Rayleigh number");
     const Real Le_ = args.getreal("-Le", "--Lewis", 100, "Lewis number");
     const Real Rrho_ = args.getreal("-Rr", "--Rrho", 2, "Density stability ratio");
+    const Real Rsep_ = args.getreal("-Rs", "--Rsep", 1, "Separation ratio for binary fluid convection");
     
     
     // define Channelflow boundary conditions from arglist
@@ -68,6 +71,7 @@ DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     Ra = Ra_;
     Le = Le_;
     Rrho = Rrho_;
+    Rsep = Rsep_;
 
     const Real ulowerwall_ = args.getreal("-Ua", "--ulowerwall", 0, "X-Velocity at lower wall, U(y=a)");
     const Real uupperwall_ = args.getreal("-Ub", "--uupperwall", 0, "X-Velocity at upper wall, U(y=b)");
@@ -119,6 +123,7 @@ void DDCFlags::save(const std::string& savedir) const {
            << std::setw(REAL_IOWIDTH) << Ra << "  %Ra\n"
            << std::setw(REAL_IOWIDTH) << Le << "  %Le\n"
            << std::setw(REAL_IOWIDTH) << Rrho << "  %Rrho\n"
+           << std::setw(REAL_IOWIDTH) << Rsep << "  %Rsep\n"
            << std::setw(REAL_IOWIDTH) << uupperwall << "  %uupperwall\n"
            << std::setw(REAL_IOWIDTH) << ulowerwall << "  %ulowerwall\n"
            << std::setw(REAL_IOWIDTH) << wupperwall << "  %wupperwall\n"
@@ -144,6 +149,7 @@ void DDCFlags::load(int taskid, const std::string indir) {
     Ra = getRealfromLine(taskid, is);
     Le = getRealfromLine(taskid, is);
     Rrho = getRealfromLine(taskid, is);
+    Rsep = getRealfromLine(taskid, is);
     uupperwall = getRealfromLine(taskid, is);
     ulowerwall = getRealfromLine(taskid, is);
     wupperwall = getRealfromLine(taskid, is);

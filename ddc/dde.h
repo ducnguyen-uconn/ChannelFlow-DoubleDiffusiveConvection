@@ -26,7 +26,7 @@ void temperatureNL(const FlowField& u, const FlowField& T,
                    FlowField& f, FlowField& tmp, DDCFlags flags);
 
 // nonlinear term of salt equation plus the linear coupling term to the momentum equation
-void salinityNL(const FlowField& u, const FlowField& S, 
+void salinityNL(const FlowField& u, const FlowField& T_, const FlowField& S_, 
                 ChebyCoeff Ubase, ChebyCoeff Wbase, ChebyCoeff Sbase,
                 FlowField& f, FlowField& tmp, DDCFlags flags);
 
