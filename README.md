@@ -22,7 +22,7 @@ make -j16
 ### Building DNS
 First of all, you need to define governing equations of problem. In this code, the governing equations of a double-component system have form:
 
-$$\frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} = -\nabla p + p_1\nabla^2\boldsymbol{u}+ p_1p_2(p_3\theta - p_4s) \mathbf{j}$$
+$$\frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} = -\nabla p + p_1 \nabla^2 \boldsymbol{u} + p_1 p_2 (p_3 \theta - p_4 s) \mathbf{j}$$
 
 $$\frac{\partial \theta}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \theta_{\text{tot}} = p_5\nabla^2 \theta,$$
 
