@@ -22,13 +22,14 @@ make -j16
 ### Building DNS
 First of all, you need to define governing equations of problem. In this code, the governing equations of a double-component system have form:
 
-$$`\frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} = -\nabla p + p_1 \nabla^2 \boldsymbol{u} + p_1 p_2 (p_3 \theta - p_4 s) \mathbf{j}`$$
-
-$$\frac{\partial \theta}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \theta_{\text{tot}} = p_5\nabla^2 \theta,$$
-
-$$\frac{\partial s}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla s_{\text{tot}} = p_6 \nabla^2 s + p_7\nabla^2 \theta,$$
-
-$$\nabla \cdot \boldsymbol{u} = 0,$$
+$$
+`\begin{align}
+    \frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} &= -\nabla p + p_1\nabla^2\boldsymbol{u}+ p_1p_2(p_3\theta - p_4s) \mathbf{j},\\
+    \frac{\partial \theta}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \theta_{\text{tot}} &= p_5\nabla^2 \theta,\\
+    \frac{\partial s}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla s_{\text{tot}} &= p_6 \nabla^2 s + p_7\nabla^2 \theta,\\
+    \nabla \cdot \boldsymbol{u} &= 0,
+\end{align}`
+$$
 
 where $\boldsymbol{u}$, $\theta$, and $s$ are fluctuations of the velocity, temperature, and a third field. If you can not see equations, let read [pdf](README.pdf) file instead. The third field $s$ may be the salinity in double-diffusive convection (Radko [2013](https://doi.org/10.1017/CBO9781139034173)) or the convective mass flux in binary fluid convection (Mercader [2013](https://doi.org/10.1017/jfm.2013.77)). The subscript `tot` indicates the total value of fields, which is defined as sum of base flow and fluctuation of each field. Because this code offers two options DDC and BFC, so first you need to define the problem you want to use in this code. This is perfomed by modifying controling parameters ($p_i$) via a header file `ddc/macros.h`.
 
