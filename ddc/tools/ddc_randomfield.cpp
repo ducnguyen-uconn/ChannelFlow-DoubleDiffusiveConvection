@@ -37,22 +37,23 @@ int main(int argc, char* argv[]) {
         const Real ymin = args.getreal("-ymin", "--ymin", -0.5, "lower wall height (y is wallnormal) ");
         const Real ymax = args.getreal("-ymax", "--ymax", +0.5, "upper wall height (y is wallnormal) ");
         const int seed = args.getint("-sd", "--seed", 1, "seed for random number generator");
-        const Real smooth = args.getreal("-s", "--smoothness", 0.4, "smoothness of field, 0 < s < 1");
-        const Real magn = args.getreal("-m", "--magnitude", 0.2, "magnitude  of field, 0 < m < 1");
+        const Real smooth = args.getreal("-s", "--smoothness", 0.5, "smoothness of field, 0 < s < 1");
+        const Real magn = args.getreal("-m", "--magnitude", 0.05, "magnitude  of field, 0 < m < 1");
         const bool meanfl = args.getflag("-mf", "--meanflow", "perturb the mean");
 
         const string symmstr = args.getstr("-symms", "--symmetries", "", "file of symmetries to satisfy");
 
-        const string uname = args.getstr(3, "<fieldname>", "output file");
-        const string tname = args.getstr(2, "<fieldname>", "output file");
-        const string sname = args.getstr(1, "<fieldname>", "output file");
+        const string uname = args.getstr(3, "<fieldname>", "output velocity file");
+        const string tname = args.getstr(2, "<fieldname>", "output temperature file");
+        const string sname = args.getstr(1, "<fieldname>", "output salinity file");
         args.check();
         args.save("./");
 
         srand48(seed);
 
         FlowField u(Nx, Ny, Nz, 3, Lx, Lz, ymin, ymax);
-        u.addPerturbations(u.kxmaxDealiased(), u.kzmaxDealiased(), 1.0, 1 - smooth, meanfl);
+        u.addPerturbations(u.kxmaxDealiased(), u.kzmaxDealiased(), 1.0, smooth);
+        
 
         SymmetryList s;
         if (symmstr.length() > 0) {
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]) {
         u.save(uname);
 
         FlowField temp(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
-        temp.addPerturbations(u.kxmaxDealiased(), u.kzmaxDealiased(), 1.0, 1 - smooth, meanfl);
+        temp.addPerturbations(temp.kxmaxDealiased(), temp.kzmaxDealiased(), 1.0, smooth);
 
         for (int i = 0; i < s.length(); ++i)
             temp += s[i](temp);
@@ -79,7 +80,8 @@ int main(int argc, char* argv[]) {
         temp.save(tname);
 
         FlowField salt(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
-        salt.addPerturbations(u.kxmaxDealiased(), u.kzmaxDealiased(), 1.0, 1 - smooth, meanfl);
+        salt.addPerturbations(salt.kxmaxDealiased(), salt.kzmaxDealiased(), 1.0, smooth);
+        
 
         for (int i = 0; i < s.length(); ++i)
             salt += s[i](salt);
