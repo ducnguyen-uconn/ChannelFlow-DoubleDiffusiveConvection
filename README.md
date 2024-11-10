@@ -1,5 +1,7 @@
 <h2 style="text-align:center;">Double-Diffusive Convection: An Extensional Module of Channelflow</h2>
 
+![A example of 2D fingering mode](finger2d.gif "Salinity behavior in 2D fingering mode"){width=300}
+
 ChannelFlow-DoubleDiffusiveConvection is an extensional module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](INSTALL.md) (this also contains setup on a [HPC](HPCsetup.md))
 
 After knowing how to install the standard Channelflow, you can clone them to your local machine and add present `ddc` module inside by
@@ -20,7 +22,7 @@ make -j16
 ```
 
 ### Building DNS
-First of all, you need to define governing equations of problem. In this code, the governing equations of a double-component system have form:
+First of all, you need to define governing equations of problem. In this code, we offer nondimensional governing equations, which have form:
 
 $`\begin{align}
     \frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} &= -\nabla p + p_1\nabla^2\boldsymbol{u}+ p_1p_2(p_3\theta - p_4s) \mathbf{j},\\
@@ -29,22 +31,24 @@ $`\begin{align}
     \nabla \cdot \boldsymbol{u} &= 0,
 \end{align}`$
 
-where $\boldsymbol{u}$, $\theta$, and $s$ are fluctuations of the velocity, temperature, and a third field. If you can not see equations, let read [pdf](README.pdf) file instead. The third field $s$ may be the salinity in double-diffusive convection (Radko [2013](https://doi.org/10.1017/CBO9781139034173)) or the convective mass flux in binary fluid convection (Mercader [2013](https://doi.org/10.1017/jfm.2013.77)). The subscript `tot` indicates the total value of fields, which is defined as sum of base flow and fluctuation of each field. Because this code offers two options DDC and BFC, so first you need to define the problem you want to use in this code. This is perfomed by modifying controling parameters ($p_i$) via a header file `ddc/macros.h`.
+where $\boldsymbol{u}$, $\theta$, and $s$ are fluctuations of the velocity, temperature, and a third field. If you can not see equations, let read [pdf](README.pdf) file instead. The third field $s$ may be the salinity in double-diffusive convection (Radko [2013](https://doi.org/10.1017/CBO9781139034173)) or the convective mass flux in binary fluid convection (Mercader [2013](https://doi.org/10.1017/jfm.2013.77)). The subscript `tot` indicates the total value of fields, which is defined as sum of base flow and fluctuation of each field. Also, another suggestion of governing equations is introduced for DDC in channel flow (Yang [2021](https://doi.org/10.1017/jfm.2021.1091)) with wall's boundary velocity normalized into unit velocity, $U_0=1$. Because this code offers two options DDC and BFC, so first you need to define the problem you want to use in this code. This is perfomed by modifying controling parameters ($p_i$) via a header file `ddc/macros.h`.
 
 
-| Parameters | Double-diffusive convection  | Binary fluid convection   | Description                                                       |
-|:------------------------|:--------|:----------|:------------------------------------------------------------------|
-| $p_1$ | $Pr$  | $Pr$ | $Pr$ is Prandtl number |
-| $p_2$ | $Ra$  | $Ra$ | $Ra$ is Thermal Rayleigh number |
-| $p_3$ | $1$  | $1+R_{sep}$ | $R_{sep}$ is Separation ratio  |
-| $p_4$ | $1/R_\rho$ | $R_{sep}$ | $R_\rho$ is Density stability ratio  |
-| $p_5$ | $1$  | $1$ | |
-| $p_6$ | $1/Le$  | $Le$     | $Le$ is Lewis number |
-| $p_7$ | $0$  | $1$     |  |
+| Parameters | Double-diffusive convection  | Moving-wall bounded Double-diffusive convection   | Binary fluid convection  | Description                                                       |
+|:------------------------|:--------|:----------|:----------|:------------------------------------------------------------------|
+| $p_1$ | $Pr_T$  | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr$ | $Pr_T=\frac{\nu}{\kappa_T}$ is Prandtl number |
+| $p_2$ | $Ra_T$  | $\sqrt{\frac{Ra_T}{Pr_T}}$ | $Ra_T$ | $Ra_T=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is Thermal Rayleigh number |
+| $p_3$ | $1$  | $1$ | $1+R_{sep}$ | $R_{sep}$ is Separation ratio  |
+| $p_4$ | $\frac{1}{R_\rho}$ | $\frac{1}{R_\rho}$ | $R_{sep}$ | $R_\rho=\frac{\beta\Delta_S}{\alpha\Delta_T}$ is Density stability ratio  |
+| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | |
+| $p_6$ | $\frac{1}{Le}$  | $\frac{1}{Le\sqrt{Pr_T Ra_T}}$ | $\frac{1}{Le}$ | $Le=\frac{\kappa_T}{\kappa_S}$ is Lewis number |
+| $p_7$ | $0$  | $0$    | $1$  |  |
 
-A correct defination will likes this
+A correct defination looks like this
 ```cpp
-// Example 1: for double-diffusive convection [Yang2016PNAS]
+// Example 1: Stationary-wall bounded double-diffusive convection [Yang2016PNAS]
+// Boundary velocity is not normalized into unit velocity, don't know exact U0
+// Only use this form for stationary walls
 #define P1 Pr 
 #define P2 Ra
 #define P3 1.0
@@ -53,13 +57,24 @@ A correct defination will likes this
 #define P6 1.0/Le
 #define P7 0.0
 
-// Example 2: for binary fluid convection [Mercader2013JFM]
+// Example 2: Moving-wall bounded double-diffusive convection [Yang2021JFM]
+// Boundary velocity is normalized into unit velocity, U0=1.0
+// For example, Ua=-0.5 Ub=0.5 or Ua=0 Ub=1
+// #define P1 sqrt(Pr/Ra) 
+// #define P2 (1.0/sqrt(Pr/Ra))
+// #define P3 1.0
+// #define P4 (1.0/Rrho)
+// #define P5 (1.0/sqrt(Pr*Ra))
+// #define P6 (1.0/(Le*sqrt(Pr*Ra)))
+// #define P7 0.0
+
+// Example 3: Binary fluid convection [Mercader2013JFM]
 // #define P1 Pr 
 // #define P2 Ra
 // #define P3 (1.0+Rsep)
 // #define P4 Rsep
 // #define P5 1.0
-// #define P6 Le
+// #define P6 1.0/Le
 // #define P7 1.0
 ```
 
@@ -74,10 +89,10 @@ with controling parameters
 |Option  | Default   | Description |
 |:------------------------|:----------|:------------------------------------------------------------------|
 |`-Nx <value>`| $200$| Number of points along x-direction |
-|`-Ny <value>`| $101$ | Number of points along y-direction, notes that $N_y\text{\%}2=1$ |
-|`-Nz <value>`| $10$ | Number of points along z-direction |
+|`-Ny <value>`| $101$ | Number of points along y-direction, notes that $N_y$ is odd number |
+|`-Nz <value>`| $6$ | Number of points along z-direction, minimal number is 6 ( can be used for 2D setup) |
 |`-Lx <value>`| $2$| Streamwise length |
-|`-Lz <value>`| $0.05$ | Spanwise length |
+|`-Lz <value>`| $0.004$ | Spanwise length, default setup is a small length representing 2D domain |
 |`-Pr <value>` | $10$ | Prandtl number $Pr=\frac{\nu}{\kappa_T}$|
 |`-Ra <value>`| $10^3$ | Thermal Rayleigh number $Ra_T=\frac{g\alpha\Delta T H^3}{\nu\kappa_T}$|
 |`-Le <value>`| $100$ | Lewis number $Le=\frac{\kappa_T}{\kappa_S}$ |
