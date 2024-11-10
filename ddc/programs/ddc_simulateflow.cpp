@@ -23,7 +23,7 @@
 #include "channelflow/tausolver.h"
 #include "channelflow/utilfuncs.h"
 #include "modules/ddc/ddc.h"
-
+#include "modules/ddc/addPerturbations.h"
 using namespace std;
 using namespace chflow;
 
@@ -41,6 +41,8 @@ int main(int argc, char* argv[]) {
         
 
         args.section("Program options");
+        const string modelabel = args.getstr("-m", "--modelabel", "nor", "problem/mode of initial conditions");
+
         const string outdir = args.getpath("-o", "--outdir", "data/", "output directory");
         const string ulabel = args.getstr("-ul", "--ulabel", "u", "output velocity field prefix");
         const string tlabel = args.getstr("-tl", "--tlabel", "t", "output temperature field prefix");
@@ -62,10 +64,7 @@ int main(int argc, char* argv[]) {
         
 
         TimeStep dt(flags);
-
         fftw_loadwisdom();
-       
-        
 
         cout << "Parameters: " << endl;
         cout << "Ra = " << flags.Ra << endl;
@@ -83,7 +82,7 @@ int main(int argc, char* argv[]) {
         cout << "Sb = " << flags.supperwall << endl;
 
         // Construct data fields: 3d velocity and 1d pressure
-        cout << "building velocity, temperature, salinity and pressure fields..." << flush;
+        cout << "Building velocity, temperature, salinity and pressure fields..." << flush;
         vector<FlowField> fields = {
             FlowField(Nx_, Ny_, Nz_, 3, Lx_, Lz_, ymin_, ymax_), // velocity
             FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ymin_, ymax_), // temperature
@@ -91,20 +90,17 @@ int main(int argc, char* argv[]) {
             FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ymin_, ymax_)};// pressure
         cout << "done" << endl;
 
-
-        // Define size and smoothness of initial disturbance
-        Real spectralDecay = 0.5;
-        Real magnitude = 0.05;
-        int kxmax = 3;
-        int kzmax = 3;
         // Perturb velocity field
-        cout << "Perturbing velocity field..." << flush;
-        fields[0].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[0] *= magnitude / L2Norm(fields[0]);
-        fields[1].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[1] *= magnitude / L2Norm(fields[1]);
-        fields[2].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[2] *= magnitude / L2Norm(fields[2]);
+        cout << "Perturbing velocity, temperature, and salinity fields ... " << flush;
+        if(modelabel=="yang2021jfm"){// define initial contions of Yang2021JFM's simulation
+            addRandomPerturbations(fields[0],1e-3);
+            addSinusoidalPerturbations(fields[1],-0.05,6.0);
+            addSinusoidalPerturbations(fields[2],-0.05,6.0);
+        }else{// mormal mode
+            addRandomPerturbations(fields[0],1e-3);
+            addRandomPerturbations(fields[1],1e-3);
+            addRandomPerturbations(fields[2],1e-3);
+        }
         cout << "done" << endl;
 
         // Construct Navier-Stoke integrator, set integration method
@@ -112,10 +108,11 @@ int main(int argc, char* argv[]) {
         DDC ddc(fields, flags);
         cout << "done" << endl;
 
-        Real cfl = ddc.CFL(fields[0]);
+        int count=0;
+        // Real cfl = ddc.CFL(fields[0]);
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
             cout << "         t == " << t << endl;
-            cout << "       CFL == " << cfl << endl;
+            cout << "       CFL == " << ddc.CFL(fields[0]) << endl;
             cout << " L2Norm(u) == " << L2Norm(fields[0]) << endl;
             cout << "divNorm(u) == " << divNorm(fields[0]) << endl;
             // cout << "      dPdx == " << ddc.dPdx() << endl;
@@ -123,15 +120,15 @@ int main(int argc, char* argv[]) {
 
             // Write velocity and modified pressure fields to disk
             if (P7!=0.0){
-                fields[0].save(outdir + ulabel + i2s(int(t)));//<<--- save only fluctuations
-                fields[1].save(outdir + tlabel + i2s(int(t)));
-                fields[2].save(outdir + slabel + i2s(int(t)));
+                fields[0].save(outdir + ulabel + i2s(int(count)));//<<--- save only fluctuations
+                fields[1].save(outdir + tlabel + i2s(int(count)));
+                fields[2].save(outdir + slabel + i2s(int(count)));
             }else{
-                FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save(outdir + ulabel + i2s(int(t)));//<<--- save total fields
-                FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save(outdir + tlabel + i2s(int(t)));
-                FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save(outdir + slabel + i2s(int(t)));
+                FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save(outdir + ulabel + i2s(int(count)));//<<--- save total fields
+                FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save(outdir + tlabel + i2s(int(count)));
+                FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save(outdir + slabel + i2s(int(count)));
             }
-           
+            count+=1;
 
             
 
