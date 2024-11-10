@@ -57,6 +57,9 @@ void temperatureNL(const FlowField& u_, const FlowField& T_,
         if (u.taskid() == u.task_coeff(0, 0))
             T.cmplx(0, ny, 0, 0) += Complex(Tbase(ny), 0.0);
     }
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
+    }
 
     // compute the nonlinearity (temperature advection (u*grad)T ) analogous to the convectiveNL and store in f
     dotgradScalar(u, T, f, tmp);
@@ -69,6 +72,9 @@ void temperatureNL(const FlowField& u_, const FlowField& T_,
         }
         if (u.taskid() == u.task_coeff(0, 0))
             T.cmplx(0, ny, 0, 0) -= Complex(Tbase(ny), 0.0);
+    }
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
     }
     
 
@@ -94,6 +100,9 @@ void salinityNL(const FlowField& u_, const FlowField& T_, const FlowField& S_,
         }
         if (u.taskid() == u.task_coeff(0, 0))
             S.cmplx(0, ny, 0, 0) += Complex(Sbase(ny), 0.0);
+    }
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
     }
 
     // compute the nonlinearity (temperature advection (u*grad)S ) analogous to the convectiveNL and store in f
@@ -128,7 +137,10 @@ void salinityNL(const FlowField& u_, const FlowField& T_, const FlowField& S_,
         if (u.taskid() == u.task_coeff(0, 0))
             S.cmplx(0, ny, 0, 0) -= Complex(Sbase(ny), 0.0);
     }
-    
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
+    }
+
     // dealiasing modes
     if (flags.dealias_xz())
         f.zeroPaddedModes();
@@ -263,9 +275,9 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
     const int kxmax = infields[0].kxmax();
     const int kzmax = infields[0].kzmax();
     const Real Pr = flags_.Pr;
-    // const Real Ra = flags_.Ra;
+    const Real Ra = flags_.Ra;
     const Real Le = flags_.Le;
-    // const Real Rrho = flags_.Rrho;
+    const Real Rrho = flags_.Rrho;
     
 
     // Loop over Fourier modes. 2nd derivative and summation of linear term
@@ -379,7 +391,7 @@ void DDE::linear(const std::vector<FlowField>& infields, std::vector<FlowField>&
             // Compute linear salt equation terms
             //================================
             // Goal is to compute
-            // L = 1/Le*S" - kappa^2 *tau*S [+ d2y2Sbase]
+            // L = 1/Le*S" - kappa^2 *1/Le*S [+ d2y2Sbase]
 
             // Extract relevant Fourier modes of S: use Sk and Rsk
             for (int ny = 0; ny < Nyd_; ++ny)
@@ -612,6 +624,8 @@ void DDE::reset_lambda(std::vector<Real> lambda_t) {
 
     const Real Pr = flags_.Pr;
     const Real Le = flags_.Le;
+    const Real Ra = flags_.Ra;
+    const Real Rrho = flags_.Rrho;
     // const Real Tau = flags_.Tau;
     const Real c = 4.0 * square(pi);
     //   const int kxmax = u.kxmax();
@@ -717,11 +731,15 @@ void DDE::createConstants() {
     ComplexChebyCoeff c(My_, a_, b_, Spectral);
     Real Pr = flags_.Pr;
     Real Le = flags_.Le;
-    
+    Real Ra = flags_.Ra;
+    Real Rrho = flags_.Rrho;
 
     // constant u-term: Pr/Pe*d2/y2U0
     if (Ubaseyy_.length() > 0) {
-        for (int ny = 0; ny < My_; ++ny) {
+        c[0] = Complex(P1 * Ubaseyy_[0], 0);
+        if ((abs(c[0]) > 1e-15) && !nonzCu_)
+            nonzCu_ = true;
+        for (int ny = 1; ny < My_; ++ny) {
             c[ny] = Complex(P1 * Ubaseyy_[ny], 0);
             if ((abs(c[ny]) > 1e-15) && !nonzCu_)
                 nonzCu_ = true;
@@ -733,7 +751,10 @@ void DDE::createConstants() {
     }
 
     // check that constant v-term is zero:
-    // for (int ny = 0; ny < My_; ++ny)
+    // Real hydrostaty = - Pbasey_[0];
+    // if (abs(hydrostaty) > 1e-15)
+    //     std::cerr << "Wall-normal hydrostatic pressure is unballanced" << std::endl;
+    // for (int ny = 1; ny < My_; ++ny)
     //     if (abs(- Pbasey_[ny]) > 1e-15)
     //         std::cerr << "Wall-normal hydrostatic pressure is unballanced" << std::endl;
 
@@ -753,7 +774,7 @@ void DDE::createConstants() {
     // constant t-term:
     if (Tbaseyy_.length() > 0) {
         for (int ny = 1; ny < My_; ++ny) {
-            c[ny] = Complex(Tbaseyy_[ny], 0);
+            c[ny] = Complex(P5*Tbaseyy_[ny], 0);
             if ((abs(c[ny]) > 1e-15) && !nonzCt_)
                 nonzCt_ = true;
         }
@@ -942,6 +963,10 @@ ChebyCoeff PressureGradientY(Real a, Real b, int Ny, DDCFlags flags) {
     Real Ra = flags.Ra;
     Real Rrho = flags.Rrho;
     Real Rsep = flags.Rsep;
+    Real Ta = flags.tlowerwall;
+    Real Tb = flags.tupperwall;
+    Real Sa = flags.slowerwall;
+    Real Sb = flags.supperwall;
 
     MeanConstraint constraint = flags.constraint;
     Real Vsuck = flags.Vsuck;
@@ -954,9 +979,9 @@ ChebyCoeff PressureGradientY(Real a, Real b, int Ny, DDCFlags flags) {
     } else {
         if (Vsuck < 1e-14) {
             if (dPdx < 1e-14) {
-                // for laminar flow, dxP(y) =  = Pr*Ra*(1-1/Rrho)/2 * y
-                Py[0] = P1*P2*(P3-P4)/2;  // See documentation about base solution
-                Py[1] = P1*P1*(P3-P4)/2;
+                // for laminar flow, dxP(y) =  = Pr*Ra*(p1*T0-p2*S0) * y
+                Py[0] = 0.5 * P1*P2*(P3*(Tb-Ta)-P4*(Sb-Sa)) + P1*P2*(P3*Ta-P4*Sa);  // See documentation about base solution
+                Py[1] = 0.5 * P1*P2*(P3*(Tb-Ta)-P4*(Sb-Sa));
             } else {
                 cferror("Using DDC with nonzero dPdx is not implemented yet");
             }
