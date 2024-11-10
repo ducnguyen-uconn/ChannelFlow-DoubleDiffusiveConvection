@@ -18,6 +18,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/dde.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ddcdsi.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/addPerturbations.h
 )
 
 # Define the target with appropriate dependencies
