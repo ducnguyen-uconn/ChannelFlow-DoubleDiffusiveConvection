@@ -2,13 +2,9 @@
 
 <div style="text-align: center">
     <figure>
-        <img src="images/finger2d.mp4" alt="Salinity behavior in 2D fingering mode" width="50%"/>
+        <img src="images/finger2d_resized.gif" alt="Salinity behavior in 2D fingering mode" width="50%"/>
         <figcaption>Salinity behavior of 2D finger regime</figcaption>
     </figure>
-    ![Video](<video width="640" height="480" controls>
-    <source src="images/finger2d.mp4" type="video/mp4">
-    Salinity behavior of 2D finger regime.
-    </video>)
 </div>
 
 
