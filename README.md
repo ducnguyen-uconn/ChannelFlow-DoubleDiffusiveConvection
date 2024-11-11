@@ -1,10 +1,17 @@
 <h2 style="text-align:center;">Double-Diffusive Convection: An Extensional Module of Channelflow</h2>
+
 <div style="text-align: center">
     <figure>
-        <img src="images/finger2d.gif" alt="Salinity behavior in 2D fingering mode" width="50%"/>
+        <img src="images/finger2d.mp4" alt="Salinity behavior in 2D fingering mode" width="50%"/>
         <figcaption>Salinity behavior of 2D finger regime</figcaption>
     </figure>
+    ![Video](<video width="640" height="480" controls>
+    <source src="images/finger2d.mp4" type="video/mp4">
+    Salinity behavior of 2D finger regime.
+    </video>)
 </div>
+
+
 <div style="text-align: center">
     <figure>
         <img src="images/s_yang2021jfm_case3_2d_noslip.gif" alt="Salinity" width="50%" align="left">
