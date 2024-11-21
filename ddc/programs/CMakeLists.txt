@@ -4,7 +4,7 @@ set(
     ddc_findsoln
     ddc_continuesoln
     ddc_findeigenvals
-    # ddc_edgetracking
+    ddc_edgetracking
     # ddc_addbaseflow
 )
 
