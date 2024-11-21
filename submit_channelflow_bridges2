@@ -1,11 +1,11 @@
 #!/bin/bash
-### partition 1: RM [default,use one or more full nodes], 
+### partition 1: RM [default,use one or more full nodes, 128cores], 
 ### partition 2: RM-shared [use only part of one node] 
 ### partition 3: RM-512 [use one or more full 512GB nodes]
-#SBATCH --partition=RM-shared # 
-#SBATCH --nodes=1
-#SBATCH --ntasks=8
-#SBATCH --time=1:00:00
+#SBATCH --partition=RM 
+#SBATCH --nodes=2
+#SBATCH --ntasks=256
+#SBATCH --time=72:00:00
 #SBATCH --mail-user=duc.nguyen@uconn.edu      # Destination email address
 #SBATCH --mail-type=ALL                       # Event(s) that triggers email notification
 #SBATCH --job-name=channelflow_job
@@ -15,12 +15,17 @@ export SLURM_EXPORT_ENV=ALL
 
 ##the slurm number to restart simulation... This need full state to be stored.
 SUBMITDIR=$SLURM_SUBMIT_DIR
-WORKDIR=/ocean/projects/phy240052p/vnguyen9/testing/channelflow_$SLURM_JOB_ID
-mkdir -p "$WORKDIR" && cp -r {./ddc,makefile,CMakeLists.txt} "$WORKDIR" && cp submit_channelflow_bridges2 "$WORKDIR" && cd "$WORKDIR" || exit -1
+WORKDIR=/ocean/projects/phy240052p/vnguyen9/channelflow/channelflow_$SLURM_JOB_ID
+mkdir -p "$WORKDIR" && cp -r {./ddc,makefile,CMakeLists.txt,submit_channelflow_bridges2} "$WORKDIR" && cd "$WORKDIR" || exit -1
 
 source activate base
 conda activate channelflow
-mpiexec -n $SLURM_NTASKS python3 RBC.py
 
+make buildpsc
+# mpiexec -n $SLURM_NTASKS ./build/modules/ddc/programs/ddc_simulateflow -m "yang2021jfm_case3" -o "yang2021jfm_case3_2d/" -Pr 10 -Ra 1000000 -Le 100 -Ri 1 -Rr 0.5 -Nx 192 -Ny 193 -Nz 6 -Lx 2 -Lz 0.004 -Ua -0.5 -Ub 0.5 -Ta 1 -Tb 0 -Sa 1 -Sb 0 -dt 2.5e-3 -dtmin 1e-9 -dtmax 1e-2 -dT 1 -T 1000
+mpiexec -n $SLURM_NTASKS ./build/modules/ddc/programs/ddc_simulateflow -m "yang2021jfm_case5" -o "yang2021jfm_case5_2d/" -Pr 10 -Ra 1e7 -Le 100 -Ri 1 -Rr 0.5 -Nx 768 -Ny 385 -Nz 6 -Lx 4 -Lz 0.004 -Ua -0.5 -Ub 0.5 -Ta 1 -Tb 0 -Sa 1 -Sb 0 -dt 2.5e-3 -dtmin 1e-9 -dtmax 1e-2 -dT 10 -T 6000
 cd "$SUBMITDIR" && cp channelflow_output_$SLURM_JOB_ID "$WORKDIR"
 
+
+# dos2unix submit_channelflow_bridges2
+# /ocean/projects/phy240052p/vnguyen9
