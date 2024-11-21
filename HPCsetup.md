@@ -37,7 +37,7 @@ conda install conda-forge::pthread-stubs
 conda install -c conda-forge doxygen
 ```
 
-Also, for each compiler, you may are required to change MPICXX compiler to specific compiler of the system, eg HPC. On local machine, common mpicxx compiler is set `/usr/bin/mpicxx`. On university HPC, you are not accessed to use mpicxx from miniconda when compiling global executable files. Thus, you can indicate `CMAKE_CXX_COMPILER` by specific compiler of system. For examples, if you're using UCONN HPC, you need to use compiler from `/gpfs/sharedfs1/admin/hpc2.0/apps/openmpi/5.0.5/bin/mpicxx`
+Also, for each compiler, you may are required to change MPICXX compiler to specific compiler of the system, eg HPC. On local machine, common mpicxx compiler is set `/usr/bin/mpicxx`. On university HPC, you are not accessed to use mpicxx from miniconda when compiling global executable files. Thus, you can indicate `CMAKE_CXX_COMPILER` by specific compiler of system. For examples, if you're using UCONN HPC, you need to use compiler from `/gpfs/sharedfs1/admin/hpc2.0/apps/openmpi/5.0.5/bin/mpicxx`. You can find this via `which mpicxx`.
 
 A sample installation, with all features enabled, might look like this:
 ```bash 
