@@ -25,7 +25,7 @@
 #include "channelflow/tausolver.h"
 #include "channelflow/utilfuncs.h"
 #include "modules/ddc/ddc.h"
-
+#include "modules/ddc/addPerturbations.h"
 using namespace std;
 using namespace chflow;
 
@@ -41,18 +41,18 @@ int main(int argc, char* argv[]) {
         // Define gridsize
         const int Nx = 384;
         const int Ny = 385;
-        const int Nz = 10;
+        const int Nz = 6;
 
         // Define box size
         const Real Lx = 2.0;
         const Real a = 0.0;
         const Real b = 1.0;
-        const Real Lz = 0.02;
+        const Real Lz = 0.004;
 
         // Define flow parameters
         const Real Pr = 10.0;
         const Real Rrho = 2.0;
-        const Real Ra = 1e4;
+        const Real Ra = 1e3;
         const Real Le = 100.0; // similar to \tau=1/Le=0.01
         
 
@@ -68,8 +68,8 @@ int main(int argc, char* argv[]) {
         flags.Le = Le;
 
         
-        flags.uupperwall = 0.0;
-        flags.ulowerwall = 0.0;
+        flags.uupperwall = 0.5;
+        flags.ulowerwall =-0.5;
         flags.wupperwall = 0.0;
         flags.wlowerwall = 0.0;
         flags.tupperwall = 0.0;
@@ -82,11 +82,14 @@ int main(int argc, char* argv[]) {
         // flags.dealiasing = DealiasXZ;
         // flags.constraint = PressureGradient;
         // flags.taucorrection = true;
-        flags.nonlinearity = Convection;
-        flags.t0 = 0;
-        flags.dt = 0.01;
-        flags.T = 30;
-        flags.dtmin = 1e-3;
+        // flags.nonlinearity = Convection;
+        // flags.t0 = 0;
+        flags.dt = 0.005;
+        flags.dtmin = 1e-9;
+        flags.dtmax = 0.01;
+        flags.dT = 0.1;
+        flags.T = 50;
+        
 
         cout << "Parameters: " << endl;
         cout << "Ra = " << flags.Ra << endl;
@@ -123,13 +126,17 @@ int main(int argc, char* argv[]) {
         int kxmax = 4;
         int kzmax = 3;
         // Perturb velocity field
-        cout << "Perturbing velocity field..." << flush;
-        fields[0].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[0] *= magnitude / L2Norm(fields[0]);
-        fields[1].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[1] *= magnitude / L2Norm(fields[1]);
-        fields[2].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
-        fields[2] *= magnitude / L2Norm(fields[2]);
+        cout << "Perturbing fields ... " << flush;
+        addRandomPerturbations(fields[0],1e-5);
+        // fields[0].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
+        // fields[0] *= magnitude / L2Norm(fields[0]);
+
+        addSinusoidalPerturbations(fields[1],-0.05,6.0);
+        // fields[1].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
+        // fields[1] *= magnitude / L2Norm(fields[1]);
+        addSinusoidalPerturbations(fields[2],-0.05,6.0);
+        // fields[2].addPerturbations(kxmax, kzmax, 1.0, spectralDecay);
+        // fields[2] *= magnitude / L2Norm(fields[2]);
         cout << "done" << endl;
 
         // Construct Navier-Stoke integrator, set integration method
@@ -139,23 +146,25 @@ int main(int argc, char* argv[]) {
 
         mkdir("yang2021jfm_case3_2d");
         Real cfl = ddc.CFL(fields[0]);
+        int count=0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
             cout << "         t == " << t << endl;
-            cout << "       CFL == " << cfl << endl;
+            cout << "       CFL == " << ddc.CFL(fields[0]) << endl;
             cout << " L2Norm(u) == " << L2Norm(fields[0]) << endl;
             cout << "divNorm(u) == " << divNorm(fields[0]) << endl;
             // cout << "      dPdx == " << ddc.dPdx() << endl;
             // cout << "     Ubulk == " << ddc.Ubulk() << endl;
 
             // Write velocity and modified pressure fields to disk
-            // fields[0].save("yang2021jfm_case3_2d/u" + i2s(int(t)));//<<--- save only fluctuations
-            // fields[1].save("yang2021jfm_case3_2d/t" + i2s(int(t)));
-            // fields[2].save("yang2021jfm_case3_2d/s" + i2s(int(t)));
+            // fields[0].save("yang2021jfm_case3_2d/u" + i2s(int(count)));//<<--- save only fluctuations
+            // fields[1].save("yang2021jfm_case3_2d/t" + i2s(int(count)));
+            // fields[2].save("yang2021jfm_case3_2d/s" + i2s(int(count)));
 
-            FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save("yang2021jfm_case3_2d/u" + i2s(int(t)));//<<--- save total fields
-            FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save("yang2021jfm_case3_2d/t" + i2s(int(t)));
-            FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save("yang2021jfm_case3_2d/s" + i2s(int(t)));
+            FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save("yang2021jfm_case3_2d/u" + i2s(int(count)));//<<--- save total fields
+            FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save("yang2021jfm_case3_2d/t" + i2s(int(count)));
+            FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save("yang2021jfm_case3_2d/s" + i2s(int(count)));
 
+            count+=1;
             // Take n steps of length dt
             ddc.advance(fields, dt.n());
 

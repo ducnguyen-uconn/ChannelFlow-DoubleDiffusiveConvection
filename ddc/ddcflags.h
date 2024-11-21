@@ -22,7 +22,7 @@ class DDCFlags : public DNSFlags {
     // Is derived from DNSFlags to keep saving and loading consistent
 
    public:
-    DDCFlags(Real Pr = 10.0, Real Ra = 1000.0, Real Le = 100.0, Real Rrho = 2.0, Real Rsep = 1.0,
+    DDCFlags(Real Rey = 400.0, Real Pr = 10.0, Real Ra = 1000.0, Real Le = 100.0, Real Rrho = 2.0, Real Rsep = 1.0, Real Ri = 10.0,
              Real ulowerwall = 0.0, Real uupperwall = 0.0, 
              Real wlowerwall = 0.0, Real wupperwall = 0.0, 
              Real tlowerwall = 0.0, Real tupperwall = 1.0, 
@@ -36,12 +36,13 @@ class DDCFlags : public DNSFlags {
     /** \brief The infamous virtual destructor */
     virtual ~DDCFlags() = default;
 
+    Real Rey;
     Real Pr;
     Real Ra;
     Real Le;
     Real Rrho;
     Real Rsep; // use only for binary fluid convection
-    
+    Real Ri;
 
     Real tlowerwall;
     Real tupperwall;

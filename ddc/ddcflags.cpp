@@ -7,17 +7,19 @@
 
 namespace chflow {
 
-DDCFlags::DDCFlags(Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_, 
+DDCFlags::DDCFlags(Real Rey_, Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_, Real Ri_, 
                    Real ulowerwall_, Real uupperwall_, 
                    Real wlowerwall_, Real wupperwall_,
                    Real tlowerwall_, Real tupperwall_, 
                    Real slowerwall_, Real supperwall_, 
                    Real ystats_)
-    : Pr(Pr_),
+    : Rey(Rey_),
+      Pr(Pr_),
       Ra(Ra_),
       Le(Le_),
       Rrho(Rrho_),
       Rsep(Rsep_),
+      Ri(Ri_),
 
       
       
@@ -42,12 +44,13 @@ DDCFlags::DDCFlags(Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_,
 DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     // DDC system parameters
     args.section("System parameters");
+    const Real Rey_ = args.getreal("-Rey", "--Reynolds", 400, "pseudo-Reynolds number == 1/nu");
     const Real Pr_ = args.getreal("-Pr", "--Prandtl", 10, "Prandtl number == nu/kpT");
     const Real Ra_ = args.getreal("-Ra", "--Rayleigh", 1000, "Thermal Rayleigh number");
     const Real Le_ = args.getreal("-Le", "--Lewis", 100, "Lewis number");
     const Real Rrho_ = args.getreal("-Rr", "--Rrho", 2, "Density stability ratio");
     const Real Rsep_ = args.getreal("-Rs", "--Rsep", 1, "Separation ratio for binary fluid convection");
-    
+    const Real Ri_ = args.getreal("-Ri", "--Richardson", 10, "Richardson number");
     
     // define Channelflow boundary conditions from arglist
     args2BC(args);
@@ -67,11 +70,15 @@ DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     
     // set flags
     ystats = ystats_;
+    Rey = Rey_;
     Pr = Pr_;
     Ra = Ra_;
     Le = Le_;
     Rrho = Rrho_;
     Rsep = Rsep_;
+    Ri = Ri_;
+
+    nu = 1.0 / Rey; // get kinematic viscosity of system, but this 
 
     const Real ulowerwall_ = args.getreal("-Ua", "--ulowerwall", 0, "X-Velocity at lower wall, U(y=a)");
     const Real uupperwall_ = args.getreal("-Ub", "--uupperwall", 0, "X-Velocity at upper wall, U(y=b)");
@@ -119,11 +126,13 @@ void DDCFlags::save(const std::string& savedir) const {
             cferror("DDCFlags::save(savedir) :  can't open file " + filename);
         os.precision(16);
         os.setf(std::ios::left);
-        os << std::setw(REAL_IOWIDTH) << Pr << "  %Pr\n"
+        os << std::setw(REAL_IOWIDTH) << Rey << "  %Rey\n"
+           << std::setw(REAL_IOWIDTH) << Pr << "  %Pr\n"
            << std::setw(REAL_IOWIDTH) << Ra << "  %Ra\n"
            << std::setw(REAL_IOWIDTH) << Le << "  %Le\n"
            << std::setw(REAL_IOWIDTH) << Rrho << "  %Rrho\n"
            << std::setw(REAL_IOWIDTH) << Rsep << "  %Rsep\n"
+           << std::setw(REAL_IOWIDTH) << Ri << "  %Ri\n"
            << std::setw(REAL_IOWIDTH) << uupperwall << "  %uupperwall\n"
            << std::setw(REAL_IOWIDTH) << ulowerwall << "  %ulowerwall\n"
            << std::setw(REAL_IOWIDTH) << wupperwall << "  %wupperwall\n"
@@ -145,11 +154,13 @@ void DDCFlags::load(int taskid, const std::string indir) {
         if (!is.good())
             cferror(" DDCFlags::load(taskid, flags, dt, indir):  can't open file " + indir + "ddcflags.txt");
     }
+    Rey = getRealfromLine(taskid, is);
     Pr = getRealfromLine(taskid, is);
     Ra = getRealfromLine(taskid, is);
     Le = getRealfromLine(taskid, is);
     Rrho = getRealfromLine(taskid, is);
     Rsep = getRealfromLine(taskid, is);
+    Ri = getRealfromLine(taskid, is);
     uupperwall = getRealfromLine(taskid, is);
     ulowerwall = getRealfromLine(taskid, is);
     wupperwall = getRealfromLine(taskid, is);

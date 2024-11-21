@@ -6,14 +6,17 @@
 
 #ifndef DDC_H
 #define DDC_H
-
+#include <memory>
+#include "cfbasics/mathdefs.h"
 #include "channelflow/dns.h"
 #include "channelflow/dnsalgo.h"
+#include "channelflow/flowfield.h"
 #include "modules/ddc/macros.h"
 #include "modules/ddc/ddcflags.h"
 #include "modules/ddc/dde.h"
 #include "modules/ddc/ddcdsi.h"
-
+#include "modules/ddc/ddcalgo.h"
+using namespace std;
 namespace chflow {
 
 int field2vector_size(const FlowField& u, const FlowField& temp, const FlowField& salt);
@@ -61,7 +64,7 @@ class DDC : public DNS {
 
     DDC& operator=(const DDC& ddc);
 
-    //     virtual void advance (vector<FlowField> & fields, int nSteps = 1);
+   //   void advance (vector<FlowField> & fields, int nSteps = 1);
     //
     //     virtual void reset_dt (Real dt);
     //     virtual void printStack () const;
@@ -75,9 +78,15 @@ class DDC : public DNS {
     std::shared_ptr<DDE> main_dde_;
     std::shared_ptr<DDE> init_dde_;
 
+   //  DDCAlgo* main_algorithm_;
+   //  DDCAlgo* init_algorithm_;
+
     std::shared_ptr<DDE> newDDE(const std::vector<FlowField>& fields, const DDCFlags& flags);
     std::shared_ptr<DDE> newDDE(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base,
                                 const DDCFlags& flags);
+   
+   // DDCAlgo* newAlgorithm(const std::vector<FlowField>& fields, const std::shared_ptr<DDE>& dde,
+   //                             const DDCFlags& flags);
 };
 
 

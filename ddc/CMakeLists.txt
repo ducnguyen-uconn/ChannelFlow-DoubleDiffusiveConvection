@@ -10,6 +10,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/dde.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ddcdsi.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/ddcalgo.cpp
 )
 
 set(
@@ -19,6 +20,9 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ddcdsi.h
     ${CMAKE_CURRENT_SOURCE_DIR}/addPerturbations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/boundaryCondition.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/turbulenceStatistics.h
+    # ${CMAKE_CURRENT_SOURCE_DIR}/ddcalgo.h
 )
 
 # Define the target with appropriate dependencies

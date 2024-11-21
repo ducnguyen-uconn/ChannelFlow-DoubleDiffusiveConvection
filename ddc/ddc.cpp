@@ -272,7 +272,59 @@ DDC::DDC(const std::vector<FlowField>& fields, const DDCFlags& flags)
 
 DDC::~DDC() {}
 
+// DDCAlgo* DDC::newAlgorithm(const vector<FlowField>& fields, const shared_ptr<DDE>& dde, const DDCFlags& flags) {
+//     DDCAlgo* alg = 0;
+//     switch (flags.timestepping) {
+//         case CNFE1:
+//         case SBDF1:
+//         case SBDF2:
+//         case SBDF3:
+//         case SBDF4:
+//             alg = new MultistepDNS(fields, dde, flags);
+//             break;
+//         case CNRK2:
+//             alg = new RungeKuttaDNS(fields, dde, flags);
+//             break;
+//         case SMRK2:
+//         case CNAB2:
+//             alg = new CNABstyleDNS(fields, dde, flags);
+//             break;
+//         default:
+//             cerr << "DDC::newAlgorithm : algorithm " << flags.timestepping << " is unimplemented" << endl;
+//     }
+//     return alg;
+// }
 
+// void DDC::advance(vector<FlowField>& fields, int Nsteps) {
+//     assert(main_algorithm_);
+//     // Error check
+//     if (!main_algorithm_->full() && !init_algorithm_) {
+//         cerr << "DNS::advance(u,q,Nsteps) : the main algorithm is uninitialized,\n"
+//              << "and the initialization algorithm is not set. This should not be\n"
+//              << "possible. Please submit a bug report (see documentation)." << endl;
+//         exit(1);
+//     }
+//     // check if 2nd, 3rd, ... field has the same size as 1st field (usually velocity)
+//     for (uint j = 1; j < fields.size(); ++j) {
+//         if (!fields[j].geomCongruent(fields[0]))  // are velocity and pressure of the same size?
+//             fields[j].resize(fields[0].Nx(), fields[0].Ny(), fields[0].Nz(), fields[j].Nd(), fields[0].Lx(),
+//                              fields[0].Lz(), fields[0].a(), fields[0].b(), fields[0].cfmpi());
+//     }
+    
+//     int n = 0;
+//     if ((int)(main_algorithm_->time()) % (int)(flags().symmetryprojectioninterval) == 0) {
+//         main_algorithm_->project();  // projects the flowfield and nonlin. term held by the DNSAlgo object onto symm
+//         for (uint j = 0; j < fields.size(); ++j)
+//             fields[j].project(main_algorithm_->symmetries(j));
+//     }
+//     while (!main_algorithm_->full() && n < Nsteps) {  // initial stepping
+//         main_algorithm_->push(fields);
+//         init_algorithm_->advance(fields, 1);
+//         ++n;
+//     }
+    
+//     main_algorithm_->advance(fields, Nsteps - n);
+// }
 
 const ChebyCoeff& DDC::Ubase() const {
     if (main_dde_)

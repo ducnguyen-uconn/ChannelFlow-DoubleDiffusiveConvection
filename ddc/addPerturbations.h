@@ -31,6 +31,8 @@ void addSinusoidalPerturbations(FlowField& f, Real mag, Real k) {
             for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
                 for (lint nz = 0; nz < Nz; ++nz) {
                     f(nx, ny, nz, 0) = mag*sin(2*pi*k*y[ny]);
+                    f(nx, ny, nz, 1) = 1e-2*randomReal(0.0,1.0);
+                    f(nx, ny, nz, 2) = 1e-2*randomReal(0.0,1.0);
                 }
         f.makeSpectral();
     } else if (f.Nd() == 1) {
@@ -40,6 +42,8 @@ void addSinusoidalPerturbations(FlowField& f, Real mag, Real k) {
         lint nxlocmax = f.nxlocmin() + f.Nxloc();
         lint nylocmin = f.nylocmin();
         lint nylocmax = f.nylocmax();
+        // for (lint ny = nylocmin; ny < nylocmax; ++ny)
+        // cout << ny << " " << y[ny] << endl;
         for (lint ny = nylocmin; ny < nylocmax; ++ny)
             for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
                 for (lint nz = 0; nz < Nz; ++nz) {
@@ -52,7 +56,6 @@ void addSinusoidalPerturbations(FlowField& f, Real mag, Real k) {
     
 }
 void addRandomPerturbations(FlowField& f, Real mag) {
-    
     if (mag == 0.0)
         return;
 
@@ -85,8 +88,8 @@ void addRandomPerturbations(FlowField& f, Real mag) {
         for (lint ny = nylocmin; ny < nylocmax; ++ny)
             for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
                 for (lint nz = 0; nz < Nz; ++nz) {
-                f(nx, ny, nz, 0) = mag*randomReal(0.0,1.0);
-            }
+                    f(nx, ny, nz, 0) = mag*randomReal(0.0,1.0);
+                }
         f.makeSpectral();
     } else {
         exit(1);

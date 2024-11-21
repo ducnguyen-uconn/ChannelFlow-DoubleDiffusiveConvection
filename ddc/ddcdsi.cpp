@@ -32,27 +32,45 @@ std::vector<Real> ddcstats(const FlowField& u, const FlowField& temp, const Flow
     FlowField salt_tot = totalSalinity(salt, flags);
 
     std::vector<Real> stats;
-    stats.push_back(L2Norm(u));
-    stats.push_back(heatcontent(temp_tot, flags));// averaged temp
-    stats.push_back(saltcontent(salt_tot, flags));// averaged salt
-    stats.push_back(L2Norm(u_tot));
-    stats.push_back(L2Norm(temp));
-    stats.push_back(L2Norm(temp_tot));
-    stats.push_back(L2Norm(salt));
-    stats.push_back(L2Norm(salt_tot));
-    stats.push_back(L2Norm3d(u));
-    stats.push_back(Ecf(u));
-    stats.push_back(wallshear(u_tot));
+    Real KE = 0.5*L2Norm2(u); stats.push_back(KE);
+    Real PE = 0.5*flags.Ri*L2Norm2(temp); stats.push_back(PE);
+    stats.push_back(KE+PE);
+
+    // stats.push_back(L2Norm(u));
+    // stats.push_back(heatcontent(temp_tot, flags));// averaged temp
+    // stats.push_back(saltcontent(salt_tot, flags));// averaged salt
+    // stats.push_back(L2Norm(u_tot));
+    // stats.push_back(L2Norm(temp));
+    // stats.push_back(L2Norm(temp_tot));
+    // stats.push_back(L2Norm(salt));
+    // stats.push_back(L2Norm(salt_tot));
+    // stats.push_back(L2Norm3d(u));
+    // stats.push_back(Ecf(u));
+    // stats.push_back(wallshear(u_tot));
     return stats;
 }
 
 string ddcfieldstatsheader(const DDCFlags flags) {
     stringstream header;
-    header << setw(14) << "L2(u')" << setw(10) << "<T>(y=" << flags.ystats << ")"  // change position with L2(T')
-           << setw(14) << "L2(u)" << setw(14) << "L2(T)" << setw(14) << "e3d" << setw(14) << "ecf" << setw(14)
-           << "ubulk" << setw(14) << "wbulk" << setw(14) << "wallshear" << setw(14) << "buoyPowIn" << setw(14)
-           << "totalDiss" << setw(14) << "heatinflux" << setw(14) << "L2(T')" << setw(10) << "Nu(y=" << flags.ystats
-           << ")";
+    header  << setw(14) << "KinEnergy"
+            << setw(14) << "PotEnergy"
+            << setw(14) << "TotEnergy"
+
+            // << setw(14) << "L2(u')" 
+            // << setw(10) << "<T>(y=" << flags.ystats << ")"  // change position with L2(T')
+            // << setw(14) << "L2(u)" 
+            // << setw(14) << "L2(T)" 
+            // << setw(14) << "e3d" 
+            // << setw(14) << "ecf" 
+            // << setw(14) << "ubulk" 
+            // << setw(14) << "wbulk" 
+            // << setw(14) << "wallshear" 
+            // << setw(14) << "buoyPowIn" 
+            // << setw(14) << "totalDiss" 
+            // << setw(14) << "heatinflux" 
+            // << setw(14) << "L2(T')" 
+            // << setw(10) << "Nu(y=" << flags.ystats << ")"
+            ;
     return header.str();
 }
 
@@ -166,7 +184,7 @@ Real saltcontent(const FlowField& stot, const DDCFlags flags) {
     assert(stot.ystate() == Spectral);
     int N = 100;
     Real dy = (flags.ystats - stot.a()) / (N - 1);
-    Real avt = 0;  // average temperature
+    Real avt = 0;  // average salinity
     if (stot.taskid() == stot.task_coeff(0, 0)) {
         ChebyCoeff sprof = Re(stot.profile(0, 0, 0));
         for (int i = 0; i < N; ++i) {
