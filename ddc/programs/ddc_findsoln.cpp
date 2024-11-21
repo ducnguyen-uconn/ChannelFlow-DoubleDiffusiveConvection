@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
                 s_ms[i] = si;
             }
             for (int i = 0; i < nSh; i++) {
-                dsi->makeVectorDDC(u_ms[i], t_ms[i], t_ms[i], sigma, Tms, yvec);
+                dsi->makeVectorDDC(u_ms[i], t_ms[i], s_ms[i], sigma, Tms, yvec);
                 y.col(i) = yvec;
             }
             x = msDSI->toVector(y);
