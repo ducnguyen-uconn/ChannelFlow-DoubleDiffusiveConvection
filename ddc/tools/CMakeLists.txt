@@ -5,7 +5,9 @@
 # License is GNU GPL version 2 or later: ./LICENSE
 #
 set(tool_APPS
+  ddc_initialfield
   ddc_randomfield
+  ddc_readEQ
   )
 
 foreach (program ${tool_APPS})
