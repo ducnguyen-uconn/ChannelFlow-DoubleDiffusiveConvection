@@ -36,6 +36,8 @@ std::vector<Real> ddcstats(const FlowField& u, const FlowField& temp, const Flow
     Real PE = 0.5*flags.Ri*L2Norm2(temp); stats.push_back(PE);
     stats.push_back(KE+PE);
 
+    stats.push_back(wallshearUpper(u_tot)); // for Langham2019JFM
+
     // stats.push_back(L2Norm(u));
     // stats.push_back(heatcontent(temp_tot, flags));// averaged temp
     // stats.push_back(saltcontent(salt_tot, flags));// averaged salt
@@ -55,6 +57,7 @@ string ddcfieldstatsheader(const DDCFlags flags) {
     header  << setw(14) << "KinEnergy"
             << setw(14) << "PotEnergy"
             << setw(14) << "TotEnergy"
+            << setw(14) << "wallshearUpper" 
 
             // << setw(14) << "L2(u')" 
             // << setw(10) << "<T>(y=" << flags.ystats << ")"  // change position with L2(T')
@@ -605,6 +608,8 @@ void ddcDSI::updateMu(Real mu) {
         Lx_ = mu;
     } else if (ddc_cPar_ == ddc_continuationParameter::Lz) {
         Lz_ = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Ri) {
+        ddcflags_.Ri = mu;
     }else {
         throw invalid_argument("ddcDSI::updateMu(): continuation parameter is unknown");
     }
@@ -620,12 +625,16 @@ void ddcDSI::chooseMuDDC(string muName) {
 }
 
 void ddcDSI::chooseMuDDC(ddc_continuationParameter mu) {
+    ddc_cPar_ = mu;
     switch (mu) {
         case ddc_continuationParameter::Lx:
             updateMu(Lx_);
             break;
         case ddc_continuationParameter::Lz:
             updateMu(Lz_);
+            break;
+        case ddc_continuationParameter::Ri:
+            updateMu(ddcflags_.Ri);
             break;
         case ddc_continuationParameter::none:
             throw invalid_argument(
@@ -641,10 +650,12 @@ ddc_continuationParameter ddcDSI::s2ddc_cPar(string muname) {
         return ddc_continuationParameter::Lx;
     else if (muname == "lz")
         return ddc_continuationParameter::Lz;
-    else
-        // cout << "ddcDSI::s2ddc_cPar(): ddc_continuation parameter '"+muname+"' is unknown, defaults to 'none'" <<
-        // endl;
+    else if (muname == "ri")
+        return ddc_continuationParameter::Ri;
+    else {
+        cout << "ddcDSI::s2ddc_cPar(): ddc_continuation parameter '"+muname+"' is unknown, defaults to 'none'" << endl;
         return ddc_continuationParameter::none;
+    }
 }
 
 string ddcDSI::printMu() { return ddc_cPar2s(ddc_cPar_); }
@@ -656,6 +667,8 @@ string ddcDSI::ddc_cPar2s(ddc_continuationParameter ddc_cPar) {
         return "Lx";
     else if (ddc_cPar == ddc_continuationParameter::Lz)
         return "Lz";
+    else if (ddc_cPar == ddc_continuationParameter::Ri)
+        return "Ri";
     else
         throw invalid_argument("ddcDSI::ddc_cPar2s(): continuation parameter is not convertible to string");
 }

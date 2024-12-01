@@ -33,8 +33,8 @@ namespace chflow {
             
             os  << "ypoints" << s
                 << "temp_m" << s << "salt_m" << s 
-                << "temp_grad" << s << "temp_grad" << s 
-                << "temp_flux" << s << "temp_flux" << '\n' ;
+                << "temp_grad" << s << "salt_grad" << s 
+                << "temp_flux" << s << "salt_flux" << '\n' ;
             for (int ny = 0; ny < Ny; ++ny) {
                 os  << y[ny] << s
                     << temp_m[ny] << s << salt_m[ny] << s

@@ -30,13 +30,9 @@ namespace chflow {
 
 enum class ddc_continuationParameter {
     none,
-    Pr,
-    Ra,
-    Rrho,
-    Rsep,
-    Le,
     Lx,
     Lz,
+    Ri,
 };
 
 // Real GMRESHookstep_vector (FlowField& u, FlowField& alpha, Real& T, FieldSymmetry& sigma,

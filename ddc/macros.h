@@ -1,7 +1,7 @@
 #ifndef MACROS_H
 #define MACROS_H
 /**
- * @brief this file define governing equations of double-component systems like double-diffusive convection.
+ * @brief this file defines governing equations of double-component systems like double-diffusive convection.
  * 
  * A system of double components has form:
  * Momentum equation (variable U, P):           dt(U) + div(grad(U)) = - grad(P) + p1*lap(U) + p2(p3*T-p4*S)*ey
@@ -22,7 +22,7 @@
 
 // Example 2: Moving-wall bounded double-diffusive convection [Yang2021JFM]
 // wall's boundary velocity is normalized into unit velocity, so we can set up U0=1.0
-// for example, Ua=-0.5 Ub=0.5 or Ua=0 Ub=1
+// for example, Ua=-0.5 Ub=0.5
 #define P1 sqrt(Pr/Ra) 
 #define P2 Ri*Rrho/(1.0-Rrho)
 #define P3 1.0
@@ -47,13 +47,13 @@
 
 /* Example 5: Stratified plane Couette flow [Langham2019JFM] */
 // #define P1 1.0/Rey
-// #define P2 (-1.0*Ri)
-// #define P3 1.0
+// #define P2 (-1.0)
+// #define P3 Ri
 // #define P5 (1.0/(Rey*Pr))
 
 // Example 5: Thermal convection 
 
 // #define FREESLIP
-#define SAVESTATS
+// #define SAVESTATS
 // #define EAVES2016JFM
 #endif
