@@ -22,9 +22,9 @@
 #include "channelflow/symmetry.h"
 #include "channelflow/tausolver.h"
 #include "channelflow/utilfuncs.h"
+#include "modules/ddc/macros.h"
 #include "modules/ddc/ddcdsi.h"
 #include "modules/ddc/ddc.h"
-#include "modules/ddc/addPerturbations.h"
 #include "modules/ddc/boundaryCondition.h"
 #include "modules/ddc/turbulenceStatistics.h"
 using namespace std;
@@ -45,10 +45,9 @@ int main(int argc, char* argv[]) {
         ArgList args(argc, argv, purpose);
 
         DDCFlags flags(args);
-        
+        TimeStep dt(flags);
 
         args.section("Program options");
-        const string modelabel = args.getstr("-m", "--modelabel", "nor", "problem/mode of initial conditions");
 
         const string outdir = args.getpath("-o", "--outdir", "data/", "output directory");
         const string ulabel = args.getstr("-ul", "--ulabel", "u", "output velocity field prefix");
@@ -67,26 +66,49 @@ int main(int argc, char* argv[]) {
         const Real umin = args.getreal("-u", "--umin", 0.0, "stop if chebyNorm(u) < umin");
 
         const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
-
-        const int Nx_ = args.getint("-Nx", "--Nx", 32, "# x gridpoints");
-        const int Ny_ = args.getint("-Ny", "--Ny", 31, "# y gridpoints");
-        const int Nz_ = args.getint("-Nz", "--Nz", 32, "# z gridpoints");
-        const Real Lx_ = args.getreal("-Lx", "--Lx", 1, "streamwise (x) box length");
-        const Real Lz_ = args.getreal("-Lz", "--Lz", 1, "spanwise   (z) box length");
-        const Real ymin_ = args.getreal("-ymin", "--ymin", 0.0, "lower wall height (y is wallnormal) ");
-        const Real ymax_ = args.getreal("-ymax", "--ymax", 1.0, "upper wall height (y is wallnormal) ");
+        const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
+        
+        const int nproc0 =
+            args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose/number of parallel ffts");
+        const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
+        
 
         const string outdir_profiles = args.getpath("-op", "--outdir_profiles", "profiles/", "output directory of mean profiles");
         const bool savetot = args.getflag("-savetot", "--savetotfields", "save total fields");
+
+        const string uname = args.getstr(3, "<flowfield>", "initial guess for the velocity solution");
+        const string tname = args.getstr(2, "<flowfield>", "initial guess for the temperature solution");
+        const string sname = args.getstr(1, "<flowfield>", "initial guess for the salinity solution");
+         
         args.check();
         args.save("./");
         mkdir(outdir);
         args.save(outdir);
         flags.save(outdir);
         
+        // use input fields
+        
+        CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
-        TimeStep dt(flags);
-        fftw_loadwisdom();
+        printout("Constructing u,q, and optimizing FFTW...");
+        FlowField u(uname, cfmpi);
+        FlowField temp(tname, cfmpi);
+        FlowField salt(sname, cfmpi);
+        
+        const int Nx = u.Nx();
+        const int Ny = u.Ny();
+        const int Nz = u.Nz();
+        const Real Lx = u.Lx();
+        const Real Lz = u.Lz();
+        const Real a = u.a();
+        const Real b = u.b();
+
+        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi); // for pressure
+        const bool inttime =
+            (abs(saveint * dt.dT() - int(saveint * dt.dT())) < 1e-12) && (abs(flags.t0 - int(flags.t0)) < 1e-12)
+                ? true
+                : false;
+        
 
         cout << "Parameters: " << endl;
         cout << "Ra = " << flags.Ra << endl;
@@ -110,64 +132,22 @@ int main(int argc, char* argv[]) {
         cout << "Sb = " << flags.supperwall << endl;
         #endif
 
-        // Construct data fields: 3d velocity and 1d pressure
-        cout << "Building velocity, temperature, salinity and pressure fields..." << flush;
-        vector<FlowField> fields = {
-            FlowField(Nx_, Ny_, Nz_, 3, Lx_, Lz_, ymin_, ymax_), // velocity
-            FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ymin_, ymax_), // temperature
-            FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ymin_, ymax_), // salinity
-            FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ymin_, ymax_)};// pressure
-        cout << "done" << endl;
-
-        // Perturb velocity field
-        cout << "Perturbing velocity, temperature, and salinity fields ... " << flush;
-        if(modelabel=="yang2021jfm_case3"){// define initial contions of Yang2021JFM's simulation
-            addRandomPerturbations(fields[0],1e-3);
-            #ifdef P5
-            addSinusoidalPerturbations(fields[1],-0.05,6.0);
-            #endif
-            #ifdef P6
-            addSinusoidalPerturbations(fields[2],-0.05,6.0);
-            #endif
-        } else if(modelabel=="yang2021jfm_case5"){// define initial contions of Yang2021JFM's simulation
-            addRandomPerturbations(fields[0],1e-3);
-            #ifdef P5
-            addSinusoidalPerturbations(fields[1],-0.025,8.0);
-            #endif
-            #ifdef P6
-            addSinusoidalPerturbations(fields[2],-0.025,8.0);
-            #endif
-        } else if (modelabel=="eaves2016jfm"){
-            addRandomPerturbations(fields[0],1e-4);
-            #ifdef P5
-            addSinusoidalPerturbations(fields[1],-0.05,6.0);
-            #endif
-            #ifdef P6
-            addSinusoidalPerturbations(fields[2],-0.05,6.0);
-            #endif
-        } else{// mormal mode
-            // addRandomPerturbations(fields[0],1e-3);
-            // #ifdef P5
-            // addRandomPerturbations(fields[1],1e-3);
-            // #endif
-            // #ifdef P6
-            // addRandomPerturbations(fields[2],1e-3);
-            // #endif
-
-            addSinusoidalPerturbations(fields[0],-0.2,1.0);
-            #ifdef P5
-            addSinusoidalPerturbations(fields[1],-0.1,1.0);
-            #endif
-            #ifdef P6
-            addSinusoidalPerturbations(fields[2],-0.1,1.0);
-            #endif
-        }
-        cout << "done" << endl;
+        // Construct data fields: 3d velocity, 1d temperature, 1d salinity and 1d pressure
+        vector<FlowField> fields = {u, temp, salt, q};// pressure
 
         // Construct Navier-Stoke integrator, set integration method
         cout << "Building DDC-DNS..." << flush;
         DDC ddc(fields, flags);
         cout << "done" << endl;
+
+        ddc.Ubase().save(outdir + "Ubase");
+        ddc.Wbase().save(outdir + "Wbase");
+        ddc.Tbase().save(outdir + "Tbase");
+        ddc.Sbase().save(outdir + "Sbase");
+
+        PressureSolver psolver(u, ddc.Ubase(), ddc.Wbase(), flags.nu, flags.Vsuck,
+                               flags.nonlinearity);  // NOT CORRECT FOR DDC
+        psolver.solve(q, u);
 
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
         ofstream eout, x0out;
@@ -176,11 +156,12 @@ int main(int argc, char* argv[]) {
         
         #ifdef P6
         #ifdef SAVESTATS
-        DDCTurbStats meanProfiles(Ny_);
+        DDCTurbStats meanProfiles(Ny);
         mkdir(outdir_profiles);
         #endif
         #endif
 
+        // FlowField u0 = u;
         int count=0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
             // cout << "         t == " << t << endl;
@@ -200,6 +181,7 @@ int main(int argc, char* argv[]) {
             cout << s;
             s = ddcfieldstats_t(fields[0], fields[1], fields[2], t, flags);
             eout << s << endl;
+
             #ifdef P6
             #ifdef SAVESTATS
             meanProfiles.addSnapshot(fields, flags);
@@ -228,13 +210,21 @@ int main(int argc, char* argv[]) {
             }
             count+=1;
 
+            // for debug
+            // for (int step = 0; step < dt.n(); ++step) {
+            //     fields[0] = u0;
+            //     cout << "." << flush;
+            //     ddc.advance(fields, 1);
+            // }  // End of time stepping loop
+            // for debug
+
             // Take n steps of length dt
             #ifndef FREESLIP
             ddc.advance(fields, dt.n());
             #endif
             #ifdef FREESLIP // this is not really used
             for (int step = 0; step < dt.n(); ++step) {
-                cout << "." << flush;
+                // cout << "." << flush;
                 freeslipBC(fields);// add free-slip boundary conditions
                 ddc.advance(fields, 1);
             }  // End of time stepping loop
