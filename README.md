@@ -1,4 +1,4 @@
-<h2 style="text-align:center;">Double-Diffusive Convection: An Extensional Module of Channelflow</h2>
+<h2 style="text-align:center;">Double-Diffusive Convection: An Extension Module of Channelflow</h2>
 
 <div style="text-align: center">
     <figure>
@@ -17,7 +17,7 @@
 </div>
 
 
-ChannelFlow-DoubleDiffusiveConvection is an extensional module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](INSTALL.md) (this also contains setup on a [HPC](HPCsetup.md))
+ChannelFlow-DoubleDiffusiveConvection is an extensional module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](docs/INSTALL.md) (this also contains setup on a [HPC](docs/HPCsetup.md))
 
 After knowing how to install the standard Channelflow, you can clone them to your local machine and add present `ddc` module inside by
 ```bash
@@ -46,7 +46,7 @@ $`\begin{align}
     \nabla \cdot \boldsymbol{u} &= 0,
 \end{align}`$
 
-where $\boldsymbol{u}$, $\theta$, and $s$ are perturbations of the velocity, first scalar (temperature), and second scalar (salinity) fields. If you can not see equations, let read [pdf](README.pdf) file instead. Because this code offers a general form of governing equations, so first you need to define the problem you want to use in this code. This is perfomed by modifying controlling parameters ($p_i$) via a header file `ddc/macros.h`. Here, we suggest some governing equations which are nondimensionalized for specific problems: 
+where $\boldsymbol{u}$, $\theta$, and $s$ are perturbations of the velocity, first scalar (temperature), and second scalar (salinity) fields. If you can not see equations, let read [pdf](docs/README.pdf) file instead. Because this code offers a general form of governing equations, so first you need to define the problem you want to use in this code. This is perfomed by modifying controlling parameters ($p_i$) via a header file `ddc/macros.h`. Here, we suggest some governing equations which are nondimensionalized for specific problems: 
 
 <!-- The third field $s$ may be the salinity in double-diffusive convection (Radko [2013](https://doi.org/10.1017/CBO9781139034173)) or the convective mass flux in binary fluid convection (Mercader [2013](https://doi.org/10.1017/jfm.2013.77)). The subscript `tot` indicates the total value of fields, which is defined as sum of base flow and fluctuation of each field. Also, another suggestion of governing equations is introduced for DDC in channel flow (Yang [2021](https://doi.org/10.1017/jfm.2021.1091)) with wall's boundary velocity normalized into unit velocity, $U_0=1$. Because this code offers two options DDC and BFC, so first you need to define the problem you want to use in this code. This is perfomed by modifying controlling parameters ($p_i$) via a header file `ddc/macros.h`. -->
 
@@ -56,8 +56,8 @@ where $\boldsymbol{u}$, $\theta$, and $s$ are perturbations of the velocity, fir
 | $p_1$ | $Pr_T$  | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr$ | $1/Re$ | $Pr_T=\frac{\nu}{\kappa_T}$ is Prandtl number |
 | $p_2$ | $Pr_T Ra_T$  | $\frac{Ri R_\rho}{1-R_\rho}$ | $Pr_T Ra_T$ | $Re$ | $Ra_T=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is Thermal Rayleigh number |
 | $p_3$ | $1$  | $1$ | $1+R_{sep}$ | $-Ri$ | $R_{sep}$ is Separation ratio  |
-| $p_4$ | $\frac{1}{R_\rho}$ | $\frac{1}{R_\rho}$ | $R_{sep}$ | $\frac{1}{RePr}$ | $R_\rho=\frac{\alpha\Delta_T}{\beta\Delta_S}$ is Density stability ratio  |
-| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | | $Re=\frac{Uh}{\nu}$ is Raynolds number |
+| $p_4$ | $\frac{1}{R_\rho}$ | $\frac{1}{R_\rho}$ | $R_{sep}$ |  | $R_\rho=\frac{\alpha\Delta_T}{\beta\Delta_S}$ is Density stability ratio  |
+| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | $\frac{1}{RePr}$ | $Re=\frac{Uh}{\nu}$ is Raynolds number |
 | $p_6$ | $\frac{1}{Le}$  | $\frac{1}{Le\sqrt{Pr_T Ra_T}}$ | $\frac{1}{Le}$ | | $Le=\frac{\kappa_T}{\kappa_S}$ is Lewis number |
 | $p_7$ |   |    | $1$  | | $Ri$ is Richardson number |
 
