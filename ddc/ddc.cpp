@@ -140,14 +140,51 @@ void field2vector(const FlowField& u, const FlowField& temp, const FlowField& sa
             }
         }
     }
-    // <<----- missing salt
+    // <<----- salt
+    // (0,:,0)
+    for (int ny = 0; ny < Ny; ++ny)
+        if (salt.taskid() == salt.task_coeff(0, 0))
+            a(pos++) = Re(salt.cmplx(0, ny, 0, 0));
+
+    for (int kx = 1; kx <= Kx; ++kx) {
+        int mx = salt.mx(kx);
+        if (salt.taskid() == salt.task_coeff(mx, 0)) {
+            for (int ny = 0; ny < Ny; ++ny) {
+                a(pos++) = Re(salt.cmplx(mx, ny, 0, 0));
+                a(pos++) = Im(salt.cmplx(mx, ny, 0, 0));
+            }
+        }
+    }
+    for (int kz = 1; kz <= Kz; ++kz) {
+        int mz = salt.mz(kz);
+        if (salt.taskid() == salt.task_coeff(0, mz)) {
+            for (int ny = 0; ny < Ny; ++ny) {
+                a(pos++) = Re(salt.cmplx(0, ny, mz, 0));
+                a(pos++) = Im(salt.cmplx(0, ny, mz, 0));
+            }
+        }
+    }
+    for (int kx = -Kx; kx <= Kx; kx++) {
+        if (kx == 0)
+            continue;
+        int mx = salt.mx(kx);
+        for (int kz = 1; kz <= Kz; kz++) {
+            int mz = salt.mz(kz);
+            if (u.taskid() == u.task_coeff(mx, mz)) {
+                for (int ny = 0; ny < Ny; ny++) {
+                    a(pos++) = Re(salt.cmplx(mx, ny, mz, 0));
+                    a(pos++) = Im(salt.cmplx(mx, ny, mz, 0));
+                }
+            }
+        }
+    }
 }
 
 /** \brief Turn  one Eigen vector into the three flowfields for velocity, temperature, and salinity
  * \param[in] a vector for the linear algebra
  * \param[in] u velocity field
  * \param[in] temp temperature field
- * \param[in] salt temperature field
+ * \param[in] salt salinity field
  *
  * The vectorization of u is analog to the field2vector, temperature and salinity are piped entirely
  * into the vector (a single independent dimension)
@@ -238,6 +275,73 @@ void vector2field(const Eigen::VectorXd& a, FlowField& u, FlowField& temp, FlowF
 
 
     // <<----- missing salt
+    if (salt.taskid() == salt.task_coeff(0, 0))
+        for (int ny = 0; ny < Ny; ++ny)
+            salt.cmplx(0, ny, 0, 0) = Complex(a(pos++), 0);
+
+    for (int kx = 1; kx <= Kx; ++kx) {
+        int mx = salt.mx(kx);
+        if (salt.taskid() == salt.task_coeff(mx, 0)) {
+            for (int ny = 0; ny < Ny; ++ny) {
+                reval = a(pos++);
+                imval = a(pos++);
+                salt.cmplx(mx, ny, 0, 0) = Complex(reval, imval);
+            }
+        }
+
+        // ------------------------------------------------------
+        // Now copy conjugates of u(kx,ny,0,i) to u(-kx,ny,0,i). These are
+        // redundant modes stored only for the convenience of FFTW.
+        int mxm = salt.mx(-kx);
+        int send_id = salt.task_coeff(mx, 0);
+        int rec_id = salt.task_coeff(mxm, 0);
+        for (int ny = 0; ny < Ny; ++ny) {
+            if (salt.taskid() == send_id && send_id == rec_id) {  // all is on the same process -> just copy
+                salt.cmplx(mxm, ny, 0, 0) = conj(salt.cmplx(mx, ny, 0, 0));
+            }
+#ifdef HAVE_MPI     // send_id != rec_id requires multiple processes
+            else {  // Transfer the conjugates via MPI
+                if (salt.taskid() == send_id) {
+                    Complex tmp0 = conj(salt.cmplx(mx, ny, 0, 0));
+                    MPI_Send(&tmp0, 1, MPI_DOUBLE_COMPLEX, rec_id, 0, MPI_COMM_WORLD);
+                }
+                if (u.taskid() == rec_id) {
+                    Complex tmp0;
+                    MPI_Status status;
+                    MPI_Recv(&tmp0, 1, MPI_DOUBLE_COMPLEX, send_id, 0, MPI_COMM_WORLD, &status);
+                    salt.cmplx(mxm, ny, 0, 0) = tmp0;
+                }
+            }
+#endif
+        }
+    }
+    for (int kz = 1; kz <= Kz; ++kz) {
+        int mz = salt.mz(kz);
+        if (salt.taskid() == salt.task_coeff(0, mz)) {
+            for (int ny = 0; ny < Ny; ++ny) {
+                reval = a(pos++);
+                imval = a(pos++);
+                salt.cmplx(0, ny, mz, 0) = Complex(reval, imval);
+            }
+        }
+    }
+    for (int kx = -Kx; kx <= Kx; kx++) {
+        if (kx == 0)
+            continue;
+        int mx = salt.mx(kx);
+        for (int kz = 1; kz <= Kz; kz++) {
+            int mz = salt.mz(kz);
+            if (u.taskid() == u.task_coeff(mx, mz)) {
+                for (int ny = 0; ny < Ny; ny++) {
+                    reval = a(pos++);
+                    imval = a(pos++);
+                    val = Complex(reval, imval);
+                    salt.cmplx(mx, ny, mz, 0) = val;
+                }
+            }
+        }
+    }
+    salt.setPadded(true);
 }
 
 // DDC::DDC()
