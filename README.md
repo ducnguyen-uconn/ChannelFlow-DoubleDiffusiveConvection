@@ -25,7 +25,7 @@
 </div> -->
 
 
-ChannelFlow-DoubleDiffusiveConvection is an extensional module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](docs/INSTALL.md) (this also contains setup on a [HPC](docs/HPCsetup.md))
+ChannelFlow-DoubleDiffusiveConvection is an extension module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](docs/INSTALL.md) (this also contains setup on a [HPC](docs/HPCsetup.md))
 
 After knowing how to install the standard Channelflow, you can clone them to your local machine and add present `ddc` module inside by
 ```bash
