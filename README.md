@@ -1,6 +1,14 @@
 <h2 style="text-align:center;">Double-Diffusive Convection: An Extension Module of Channelflow</h2>
 
-<div style="text-align: center">
+<!-- <div style="text-align: center">
+    <figure>
+        <img src="images/stratified_density.png" alt="Salinity" width="100%" align="left">
+    </figure>
+</div> -->
+
+![Stratified density of sheared double-diffusive convection](images/stratified_density.png)
+
+<!-- <div style="text-align: center">
     <figure>
         <img src="images/finger2d_resized.gif" alt="Salinity behavior in 2D fingering mode" width="50%" align="center"/>
         <figcaption>Salinity behavior of 2D finger regime</figcaption>
@@ -14,7 +22,7 @@
         <img src="images/t_yang2021jfm_case3_2d_noslip.gif" alt="Temperature" width="50%" align="right">
         <figcaption>Salinity and temperature behaviors of 2D diffusive regime in Couette flow configuration.</figcaption>
     </figure>
-</div>
+</div> -->
 
 
 ChannelFlow-DoubleDiffusiveConvection is an extensional module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](docs/INSTALL.md) (this also contains setup on a [HPC](docs/HPCsetup.md))
