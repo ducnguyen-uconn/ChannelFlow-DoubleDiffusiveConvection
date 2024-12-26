@@ -33,6 +33,14 @@ enum class ddc_continuationParameter {
     Lx,
     Lz,
     Ri,
+    Rrho,
+    Pr,
+    Ra,
+    Le,
+    Rsep,
+    Rey,
+    gammax,
+    gammaz
 };
 
 // Real GMRESHookstep_vector (FlowField& u, FlowField& alpha, Real& T, FieldSymmetry& sigma,
