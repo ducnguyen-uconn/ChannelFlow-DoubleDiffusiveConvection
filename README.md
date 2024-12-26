@@ -1,33 +1,44 @@
-<h2 style="text-align:center;">Double-Diffusive Convection: An Extension Module of Channelflow</h2>
-
-<!-- <div style="text-align: center">
-    <figure>
-        <img src="images/stratified_density.png" alt="Salinity" width="100%" align="left">
-    </figure>
-</div> -->
+<h2 style="text-align:center;">Double-Diffusive Convection: An Extension Module of Channelflow 2.0</h2>
 
 ![Stratified density of sheared double-diffusive convection](images/stratified_density.png)
 
-<!-- <div style="text-align: center">
-    <figure>
-        <img src="images/finger2d_resized.gif" alt="Salinity behavior in 2D fingering mode" width="50%" align="center"/>
-        <figcaption>Salinity behavior of 2D finger regime</figcaption>
-    </figure>
-</div>
+This is an extension module of Channelflow 2.0 for wall-bounded double-diffusive problems, which has governing equations:
 
+$$\begin{align}
+    \nabla \cdot \boldsymbol{U} &= 0,\\
+    \frac{\partial \boldsymbol{U}}{\partial t} + \boldsymbol{U} \cdot \nabla \boldsymbol{U} &= -\nabla P + p_1\nabla^2\boldsymbol{U}+ p_2(p_3 T - p_4 S) (\sin{\gamma}\hat{\mathbf{e}}_x+\cos{\gamma}\hat{\mathbf{e}}_y),\\
+    \frac{\partial T}{\partial t} + \boldsymbol{U} \cdot \nabla T &= p_5\nabla^2 T,\\
+    \frac{\partial S}{\partial t} + \boldsymbol{U} \cdot \nabla S &= p_6 \nabla^2 S + p_7\nabla^2 T,
+\end{align}$$
 
-<div style="text-align: center">
-    <figure>
-        <img src="images/s_yang2021jfm_case3_2d_noslip.gif" alt="Salinity" width="50%" align="left">
-        <img src="images/t_yang2021jfm_case3_2d_noslip.gif" alt="Temperature" width="50%" align="right">
-        <figcaption>Salinity and temperature behaviors of 2D diffusive regime in Couette flow configuration.</figcaption>
-    </figure>
-</div> -->
+where $\boldsymbol{U}$, $T$, and $S$ are the total velocity, first scalar (temperature/density), and second scalar (salinity/concentration) fields, respectively. The $\gamma$ is the inclined angle between downward vertical direction and gravity $\boldsymbol{g}=g\hat{\boldsymbol{g}}=g(\sin{\gamma}\hat{\mathbf{e}}_x+\cos{\gamma}\hat{\mathbf{e}}_y)$. Also, $p_i$ is controlling parameter to define the given governing equations via a header file `ddc/macros.h`. We suggest some wall-bounded fluid flow systems as:
 
+| Parameters | Double-diffusive convection (Singh & Srinivasan [2014](https://doi.org/10.1063/1.4882264)) | Sheared double-diffusive convection (Yang et al. JFM [2021](https://doi.org/10.1017/jfm.2021.1091)) | Binary fluid convection (Mercader et al. JFM [2013](https://doi.org/10.1017/jfm.2013.77)) | Stratified plane Couette flow (Langham et al. JFM [2019](https://doi.org/10.1017/jfm.2019.811)) | Inclined layer convection (Zheng et al. JFM [2024](https://doi.org/10.1017/jfm.2024.842)) | Description |
+|:------|:--------|:----------|:----------|:----------|:-----------|:-----------|
+| $p_1$ | $Pr_T$  | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr$ | $1/Re$ | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr_T=\frac{\nu}{\kappa_T}$ is Prandtl number |
+| $p_2$ | $Pr_T Ra_T$  | $\frac{Ri}{R_\rho-1}$ | $Pr_T Ra_T$ | $Re$ | $1$ | $Ra_T=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is Thermal Rayleigh number |
+| $p_3$ | $1$  | $1$ | $1+R_{sep}$ | $-Ri$ | $1$ | $R_{sep}$ is Separation ratio  |
+| $p_4$ | $R_\rho$ | $R_\rho$ | $R_{sep}$ |  |  | $R_\rho=\Lambda=\frac{\beta\Delta_S}{\alpha\Delta_T}$ is Density stability ratio  |
+| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | $\frac{1}{RePr}$ |$\frac{1}{\sqrt{Pr_T Ra_T}}$ | $Re=\frac{Uh}{\nu}$ is Raynolds number |
+| $p_6$ | $\frac{1}{Le}$  | $\frac{1}{Le\sqrt{Pr_T Ra_T}}$ | $\frac{1}{Le}$ | | | $Le=\frac{1}{\tau}=\frac{\kappa_T}{\kappa_S}$ is Lewis number |
+| $p_7$ |   |    | $1$  | | | $Ri$ is Richardson number |
 
-ChannelFlow-DoubleDiffusiveConvection is an extension module of Channelflow 2.0 for wall-bounded double-component problems like Double-Diffusive Convection and Binary Fluid Convection. To use this code, pls read following instruction to [install Channelflow](docs/INSTALL.md) (this also contains setup on a [HPC](docs/HPCsetup.md))
+A correct defination looks like this
+```cpp
+// Example: Moving-wall bounded double-diffusive convection [Yang2021JFM]
+// Velocity is normalized by free-fall velocity
+#define P1 sqrt(Pr/Ra) 
+#define P2 Ri/(Rrho-1)
+#define P3 1.0
+#define P4 Rrho
+#define P5 1.0/sqrt(Pr*Ra)
+#define P6 1.0/(Le*sqrt(Pr*Ra))
+```
+Notes that if you don't define $p_5$ or $p_6$, scalar's governing equations and their buoyancy components ($p_3$, $p_4$) in momentum equations will be removed automatically. Let's create your governing equations.
 
-After knowing how to install the standard Channelflow, you can clone them to your local machine and add present `ddc` module inside by
+### Installation
+
+Read [this](docs/INSTALL.md) to install and set up required libraries of the module on a [HPC](docs/HPCsetup.md). To install the code, first you need to clone code of Channelflow and this repo to your local machine
 ```bash
 git clone https://github.com/epfl-ecps/channelflow.git
 
@@ -36,7 +47,7 @@ mkdir -p ./channelflow/modules/
 rm -rf ./channelflow/modules/ddc
 cp -r ./ddc ./channelflow/modules/ddc
 ``` 
-And build them, for example
+and build them
 ```bash
 mkdir -p build
 cd build
@@ -44,81 +55,12 @@ cmake ../channelflow -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx -DWITH_DDC=ON -DWITH_N
 make -j16
 ```
 
-### Building DNS
-First of all, you need to define governing equations of problem. In this code, we offer nondimensional governing equations, which have form:
 
-$`\begin{align}
-    \frac{\partial \boldsymbol{u}}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \boldsymbol{u}_{\text{tot}} &= -\nabla p + p_1\nabla^2\boldsymbol{u}+ p_2(p_3\theta - p_4s) \mathbf{j},\\
-    \frac{\partial \theta}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla \theta_{\text{tot}} &= p_5\nabla^2 \theta,\\
-    \frac{\partial s}{\partial t} + \boldsymbol{u}_{\text{tot}} \cdot \nabla s_{\text{tot}} &= p_6 \nabla^2 s + p_7\nabla^2 \theta,\\
-    \nabla \cdot \boldsymbol{u} &= 0,
-\end{align}`$
-
-where $\boldsymbol{u}$, $\theta$, and $s$ are perturbations of the velocity, first scalar (temperature), and second scalar (salinity) fields. If you can not see equations, let read [pdf](docs/README.pdf) file instead. Because this code offers a general form of governing equations, so first you need to define the problem you want to use in this code. This is perfomed by modifying controlling parameters ($p_i$) via a header file `ddc/macros.h`. Here, we suggest some governing equations which are nondimensionalized for specific problems: 
-
-<!-- The third field $s$ may be the salinity in double-diffusive convection (Radko [2013](https://doi.org/10.1017/CBO9781139034173)) or the convective mass flux in binary fluid convection (Mercader [2013](https://doi.org/10.1017/jfm.2013.77)). The subscript `tot` indicates the total value of fields, which is defined as sum of base flow and fluctuation of each field. Also, another suggestion of governing equations is introduced for DDC in channel flow (Yang [2021](https://doi.org/10.1017/jfm.2021.1091)) with wall's boundary velocity normalized into unit velocity, $U_0=1$. Because this code offers two options DDC and BFC, so first you need to define the problem you want to use in this code. This is perfomed by modifying controlling parameters ($p_i$) via a header file `ddc/macros.h`. -->
-
-
-| Parameters | Double-diffusive convection (Singh & Srinivasan [2014](https://doi.org/10.1063/1.4882264)) | Double-diffusive convection (normalized by free-fall velocity) (Yang et al. JFM [2021](https://doi.org/10.1017/jfm.2021.1091)) | Binary fluid convection (Mercader et al. JFM [2013](https://doi.org/10.1017/jfm.2013.77)) | Stratified plane Couette flow (Langham et al. JFM [2019](https://doi.org/10.1017/jfm.2019.811)) | Description                                                       |
-|:------------------------|:--------|:----------|:----------|:----------|:------------------------------------------------------------------|
-| $p_1$ | $Pr_T$  | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr$ | $1/Re$ | $Pr_T=\frac{\nu}{\kappa_T}$ is Prandtl number |
-| $p_2$ | $Pr_T Ra_T$  | $\frac{Ri R_\rho}{1-R_\rho}$ | $Pr_T Ra_T$ | $Re$ | $Ra_T=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is Thermal Rayleigh number |
-| $p_3$ | $1$  | $1$ | $1+R_{sep}$ | $-Ri$ | $R_{sep}$ is Separation ratio  |
-| $p_4$ | $\frac{1}{R_\rho}$ | $\frac{1}{R_\rho}$ | $R_{sep}$ |  | $R_\rho=\frac{\alpha\Delta_T}{\beta\Delta_S}$ is Density stability ratio  |
-| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | $\frac{1}{RePr}$ | $Re=\frac{Uh}{\nu}$ is Raynolds number |
-| $p_6$ | $\frac{1}{Le}$  | $\frac{1}{Le\sqrt{Pr_T Ra_T}}$ | $\frac{1}{Le}$ | | $Le=\frac{\kappa_T}{\kappa_S}$ is Lewis number |
-| $p_7$ |   |    | $1$  | | $Ri$ is Richardson number |
-
-Notes that if you don't define $p_5$ or $p_6$, corresponding scalar's governing equations and buoyancy components ($p_3$, $p_4$) in momentum equations will be removed. You can create a new your own governing equations.
-
-A correct defination looks like this
-```cpp
-// Example 1: Stationary-wall bounded double-diffusive convection [Yang2016PNAS]
-// Boundary velocity is not normalized into unit velocity, don't know exact U0
-// Only use this form for stationary walls
-// #define P1 Pr 
-// #define P2 Pr*Ra
-// #define P3 1.0
-// #define P4 1.0/Rrho
-// #define P5 1.0
-// #define P6 1.0/Le
-
-// Example 2: Moving-wall bounded double-diffusive convection [Yang2021JFM]
-// Velocity is normalized by free-fall velocity into unit velocity, U0=1.0
-// For example, Ua=-0.5 Ub=0.5 or Ua=0 Ub=1
-#define P1 sqrt(Pr/Ra) 
-#define P2 1.0
-#define P3 1.0
-#define P4 (1.0/Rrho)
-#define P5 (1.0/sqrt(Pr*Ra))
-#define P6 (1.0/(Le*sqrt(Pr*Ra)))
-
-// Example 3: Binary fluid convection [Mercader2013JFM]
-// #define P1 Pr 
-// #define P2 Pr*Ra
-// #define P3 (1.0+Rsep)
-// #define P4 Rsep
-// #define P5 1.0
-// #define P6 1.0/Le
-// #define P7 1.0
-
-// Example 4: Couette flow 
-// #define P1 1.0/Rey
-
-// Example 5: Stratified plane Couette flow [Langham2019JFM]
-// #define P1 1.0/Rey
-// #define P2 Rey
-// #define P3 (-Ri)
-// #define P5 1.0/(Rey*Pr)
-```
-
-
-### Running executable files
 A exact executable command likes this:
 ```bash
 mpiexec -n <ncpu> ./<exename> <option1> <option2> ...
 ```
-with controling parameters
+with a few parameters:
 
 |Option  | Default   | Description |
 |:------------------------|:----------|:------------------------------------------------------------------|
@@ -148,5 +90,12 @@ with controling parameters
 
 Examples:
 ```bash
-mpiexec -n 16 ./ddc_simulateflow -Pr 10 -Ra 1000 -Le 100 -Rr 2 -dt 0.02 -dT 1 -T 100 -Nx 200 -Ny 81 -Nz 10 -Lx 2 -Lz 0.02 -nl "conv"
+# create random states as initial conditions
+mpiexec -n 16 ./build/modules/ddc/tools/ddc_initialfield -Nx 96 -Ny 31 -Nz 6 -Lx 2 -ymin -0.5 -ymax 0.5 -Lz 0.004 iniU iniT iniS
+# run a 2D simulation from initial conditions
+mpiexec -n 16 ./build/modules/ddc/programs/ddc_simulateflow -Pr 10 -Ra 1000 -Le 100 -Rr 2 -Ua 0 -Ub 0 -Ta 0.5 -Tb -0.5 -Sa 0.5 -Sb -0.5 -dt 0.02 -dT 1 -T 100  iniU iniT iniS
+# find equilibrium solution based on guess fields as initial condition in inclined angle of 90
+mpiexec -n 16 ./build/modules/ddc/programs/ddc_findsoln -eqb -Nn 100 -Pr 0.71 -Ra 6000 -Le 100 -Rr 2 -GammaX 90 -Ua 0 -Ub 0 -Ta 0.5 -Tb -0.5 -Sa 0.5 -Sb -0.5 -symms symms.asc guessU guessT guessS
+# run parameter continuation (for equilibrium points) of Ra in [5500,14000] with step of 100
+mpiexec -n 16 ./build/modules/ddc/programs/ddc_continuesoln -eqb -cont Ra -dmu 100 -targ -targMu 14000 -Ra 5500 -Pr 0.71 -Le 100 -Rr 2 -GammaX 90 -Ua 0 -Ub 0 -Ta 0.5 -Tb -0.5 -Sa 0.5 -Sb -0.5 -symms symms.asc guessU guessT guessS
 ```
