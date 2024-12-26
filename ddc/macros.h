@@ -23,12 +23,12 @@
 // Example 2: Moving-wall bounded double-diffusive convection [Yang2021JFM]
 // wall's boundary velocity is normalized into unit velocity, so we can set up U0=1.0
 // for example, Ua=-0.5 Ub=0.5
-#define P1 sqrt(Pr/Ra) 
-#define P2 Ri*Rrho/(1.0-Rrho)
-#define P3 1.0
-#define P4 1.0/Rrho
-#define P5 1.0/sqrt(Pr*Ra)
-#define P6 1.0/(Le*sqrt(Pr*Ra))
+// #define P1 sqrt(Pr/Ra) 
+// #define P2 Ri/(Rrho-1)
+// #define P3 1.0
+// #define P4 Rrho
+// #define P5 1.0/sqrt(Pr*Ra)
+// #define P6 1.0/(Le*sqrt(Pr*Ra))
 
 
 // Example 3: Binary fluid convection [Mercader2013JFM]: p1 = Pr, p2 = Ra, p3 = 1+Rsep, p4 = 1, p5 = 1, p6 = 1.0/Le, p7 = 1
@@ -51,7 +51,11 @@
 // #define P3 Ri
 // #define P5 (1.0/(Rey*Pr))
 
-// Example 5: Thermal convection 
+// Example 6: RBC [Zheng JFM 2024]
+#define P1 sqrt(Pr/Ra) 
+#define P2 1.0
+#define P3 1.0
+#define P5 1.0/sqrt(Pr*Ra)
 
 // #define FREESLIP
 // #define SAVESTATS

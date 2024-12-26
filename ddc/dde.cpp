@@ -13,40 +13,44 @@ namespace chflow {
 void momentumNL(const FlowField& u, const FlowField& T, const FlowField& S, 
                 ChebyCoeff Ubase, ChebyCoeff Wbase, 
                 FlowField& f, FlowField& tmp, DDCFlags flags) {
-    // goal: (u*grad)u - P2*(P3*T-P4*S)*ey
+    // goal: (u*grad)u - P2*(P3*T-P4*S)*(sin(gammax)*ex+cos(gammax)*ey)
     Real Rey = flags.Rey;
     Real Pr = flags.Pr;
     Real Ra = flags.Ra;
     Real Rrho = flags.Rrho;
     Real Rsep = flags.Rsep;
     Real Ri = flags.Ri;
+    Real sgammax = sin(flags.gammax);
+    Real cgammax = sin(flags.gammax);
 
     // compute the nonlinear term of NSE in the usual Channelflow style
     navierstokesNL(u, Ubase, Wbase, f, tmp, flags);
 
     #if defined(P5)||defined(P6)
     // substract the linear temperature+salinity coupling term
-    // f -= P2(P3*T-P4*S)*ey
+    // f -= P2(P3*T-P4*S)*(sin(gammax)*ex+cos(gammax)*ey)
     #ifdef HAVE_MPI
     for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); mz++)
         for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); mx++)
             for (int ny = 0; ny < f.Ny(); ny++) {
-                #ifdef P5
-                f.cmplx(mx, ny, mz, 1) -= P2*P3*T.cmplx(mx, ny, mz, 0);
-                #endif
-                #ifdef P6
-                f.cmplx(mx, ny, mz, 1) -= -P2*P4*S.cmplx(mx, ny, mz, 0);
+                #if defined(P6)
+                f.cmplx(mx, ny, mz, 0) -= P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0))*sgammax;
+                f.cmplx(mx, ny, mz, 1) -= P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0))*cgammax;
+                #elif defined(P5)
+                f.cmplx(mx, ny, mz, 0) -= P2*P3*T.cmplx(mx, ny, mz, 0)*sgammax;
+                f.cmplx(mx, ny, mz, 1) -= P2*P3*T.cmplx(mx, ny, mz, 0)*cgammax;
                 #endif
             }
     #else
     for (int ny = 0; ny < f.Ny(); ny++)
         for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); mx++)
             for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); mz++) {
-                #ifdef P5
-                f.cmplx(mx, ny, mz, 1) -= P2*P3*T.cmplx(mx, ny, mz, 0);
-                #endif
-                #ifdef P6
-                f.cmplx(mx, ny, mz, 1) -= -P2*P4*S.cmplx(mx, ny, mz, 0);
+                #if defined(P6)
+                f.cmplx(mx, ny, mz, 0) -= P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0))*sgammax;
+                f.cmplx(mx, ny, mz, 1) -= P2*(P3*T.cmplx(mx, ny, mz, 0)-P4*S.cmplx(mx, ny, mz, 0))*cgammax;
+                #elif defined(P5)
+                f.cmplx(mx, ny, mz, 0) -= P2*P3*T.cmplx(mx, ny, mz, 0)*sgammax;
+                f.cmplx(mx, ny, mz, 1) -= P2*P3*T.cmplx(mx, ny, mz, 0)*cgammax;
                 #endif
             }
     #endif
@@ -751,8 +755,8 @@ void DDE::createDDCBaseFlow() {
             std::cerr << "ParabolicBase is not defined in DDC.\n";
             break;
         case LaminarBase:
-            Ubase_ = laminarVelocityProfile(flags_.dPdx, flags_.Ubulk, ulowerwall, uupperwall, a_, b_, My_, flags_);
-            Wbase_ = laminarVelocityProfile(flags_.dPdz, flags_.Wbulk, wlowerwall, wupperwall, a_, b_, My_, flags_);
+            Ubase_ = laminarVelocityProfile(flags_.gammax, flags_.dPdx, flags_.Ubulk, ulowerwall, uupperwall, a_, b_, My_, flags_);
+            Wbase_ = laminarVelocityProfile(0.0, flags_.dPdz, flags_.Wbulk, wlowerwall, wupperwall, a_, b_, My_, flags_);
 
             Tbase_ = linearTemperatureProfile(a_, b_, My_, flags_);
             Sbase_ = linearSalinityProfile(a_, b_, My_, flags_);
@@ -784,7 +788,7 @@ void DDE::createConstants() {
     Real Rrho = flags_.Rrho;
     Real Ri = flags_.Ri;
 
-    // constant u-term: Pr/Pe*d2/y2U0
+    // constant u-term
     if (Ubaseyy_.length() > 0) {
         c[0] = Complex(P1 * Ubaseyy_[0], 0);
         if ((abs(c[0]) > 1e-15) && !nonzCu_)
@@ -928,27 +932,61 @@ void DDE::initDDCConstraint(const FlowField& u) {
     constraint_ = true;
 }
 
-// ChebyCoeff ShearVelocityProfile(Real a, Real b, int Ny, DDCFlags flags) {
-//     ChebyCoeff u(Ny, a, b, Spectral);
-//     Real Ua = flags.ulowerwall;
-//     Real Ub = flags.uupperwall;
 
-//     // for Kolmogorov shear flow, U_0(y) = sin(2\pi*y) = (2\pi*y)-(2\pi*y)^3/3!
-//     u[0] = -5./12.*M_PI*M_PI*M_PI+M_PI +0.5 * (Ub - Ua) + Ua;  // See documentation about base solution
-//     u[1] = -13./24.*M_PI*M_PI*M_PI+M_PI + 0.5 * (Ub - Ua);
-//     u[2] = -0.25*M_PI*M_PI*M_PI;
-//     u[3] = -1./24.*M_PI*M_PI*M_PI;
-    
-//     return u;
-// }
-ChebyCoeff laminarVelocityProfile(Real dPdx, Real Ubulk, Real Ua, Real Ub, Real a, Real b, int Ny,
+ChebyCoeff laminarVelocityProfile(Real gammax, Real dPdx, Real Ubulk, Real Ua, Real Ub, Real a, Real b, int Ny,
                                   DDCFlags flags) {
     MeanConstraint constraint = flags.constraint;
+    Real Vsuck = flags.Vsuck;
+
+    Real Rey = flags.Rey;
+    Real Pr = flags.Pr;
+    Real Ra = flags.Ra;
+    Real Rrho = flags.Rrho;
+    Real Rsep = flags.Rsep;
+    Real Ri = flags.Ri;
+    Real sgammax = sin(gammax);
     
     Real h = b-a;
+    Real minor2 = b*b-a*a;
+    Real minor3 = b*b*b-a*a*a;
+    Real plus2 = b*b+a*a;
+    Real plus3 = b*b*b+a*a*a;
+    Real c = 0.5*(b-a);
     Real d = 0.5*(b+a);
-    Real Vsuck = flags.Vsuck;
     
+    Real Ta = flags.tlowerwall;
+    Real Tb = flags.tupperwall;
+    Real Sa = flags.slowerwall;
+    Real Sb = flags.supperwall;
+
+    Real pt1 = (Tb-Ta)/h;
+    Real pt0 = (b*Ta-a*Tb)/h;
+
+    Real ps1 = (Sb-Sa)/h;
+    Real ps0 = (b*Sa-a*Sb)/h;
+    #if defined(P6)
+    Real p3 = -1.0*P2*sgammax/(6.0*P1) * (P3*pt1-P4*ps1);
+    Real p2 = -1.0*P2*sgammax/(2.0*P1) * (P3*pt0-P4*ps0);
+    Real p1 = (Ub-Ua)/h 
+            + P2*sgammax/(2.0*P1*h)*(1.0/3.0*(P3*pt1-P4*ps1)*minor3 + (P3*pt0-P4*ps0)*minor2);
+    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h)
+            + P2*sgammax/(12.0*P1)*(P3*pt1-P4*ps1)*(plus3-minor3*(b+a)/h)
+            + P2*sgammax/(4.0*P1)*(P3*pt0-P4*ps0)*(plus2-minor2*(b+a)/h);
+    #elif defined(P5)
+    Real p3 = -1.0*P2*sgammax/(6.0*P1) * (P3*pt1);
+    Real p2 = -1.0*P2*sgammax/(2.0*P1) * (P3*pt0);
+    Real p1 = (Ub-Ua)/h 
+            + P2*sgammax/(2.0*P1*h)*(1.0/3.0*(P3*pt1)*minor3 + (P3*pt0)*minor2);
+    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h)
+            + P2*sgammax/(12.0*P1)*(P3*pt1)*(plus3-minor3*(b+a)/h)
+            + P2*sgammax/(4.0*P1)*(P3*pt0)*(plus2-minor2*(b+a)/h);
+    #else
+    Real p3 = 0;
+    Real p2 = 0;
+    Real p1 = (Ub-Ua)/h;
+    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h);
+    #endif
+    // printf("%f*y^3+%f*y^2+%f*y+%f\n",p3,p2,p1,p0);fflush(stdout);
 
     ChebyCoeff u(Ny, a, b, Spectral);
 
@@ -957,8 +995,10 @@ ChebyCoeff laminarVelocityProfile(Real dPdx, Real Ubulk, Real Ua, Real Ub, Real 
     } else {
         if (Vsuck < 1e-14) {
             if (dPdx < 1e-14) {
-                u[0] =  (d-a)/h * (Ub - Ua) + Ua;  // See documentation about base solution
-                u[1] =  (d-a)/h * (Ub - Ua);
+                u[0] =    (1.5*c*c*d+d*d*d)*p3+(0.5*c*c+d*d)*p2+d*p1+p0;// See documentation
+                u[1] = (0.75*c*c*c+3*c*d*d)*p3        +2*c*d*p2+c*p1;
+                u[2] =            1.5*c*c*d*p3      +0.5*c*c*p2;
+                u[3] =           0.25*c*c*c*p3;
             } else {
                 cferror("Using DDC with nonzero dPdx is not implemented yet");
             }
@@ -1071,6 +1111,8 @@ ChebyCoeff hydrostaticPressureGradientY(ChebyCoeff Tbase, ChebyCoeff Sbase, DDCF
     Real Vsuck = flags.Vsuck;
     Real dPdx = flags.dPdx;
 
+    Real cgamma = cos(flags.gammax);
+
     ChebyCoeff Py(Tbase);
 
     if (constraint == BulkVelocity) {
@@ -1078,13 +1120,13 @@ ChebyCoeff hydrostaticPressureGradientY(ChebyCoeff Tbase, ChebyCoeff Sbase, DDCF
     } else {
         if (Vsuck < 1e-14) {
             if (dPdx < 1e-14) {
-                // for laminar flow, dxP(y) = P2*(P3*T0(y)-P4*S0(y))
+                // dxP(y) = P2*(P3*T0(y)-P4*S0(y))*cos(gammaX)
                 #if defined(P6)
-                Py[0] = P2*(P3*Tbase[0]-P4*Sbase[0]);  // See documentation about base solution
-                Py[1] = P2*(P3*Tbase[1]-P4*Sbase[1]);
+                Py[0] = P2*(P3*Tbase[0]-P4*Sbase[0])*cgamma;  // See documentation about base solution
+                Py[1] = P2*(P3*Tbase[1]-P4*Sbase[1])*cgamma;
                 #elif defined(P5)
-                Py[0] = P2*P3*Tbase[0];  // See documentation about base solution
-                Py[1] = P2*P3*Tbase[1];
+                Py[0] = P2*P3*Tbase[0]*cgamma;  // See documentation about base solution
+                Py[1] = P2*P3*Tbase[1]*cgamma;
                 #endif
             } else {
                 cferror("Using DDC with nonzero dPdx is not implemented yet");

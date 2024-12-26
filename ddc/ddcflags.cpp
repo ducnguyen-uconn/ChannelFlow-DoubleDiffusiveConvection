@@ -7,7 +7,7 @@
 
 namespace chflow {
 
-DDCFlags::DDCFlags(Real Rey_, Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_, Real Ri_, 
+DDCFlags::DDCFlags(Real Rey_, Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rsep_, Real Ri_, Real gammax_, Real gammaz_,
                    Real ulowerwall_, Real uupperwall_, 
                    Real wlowerwall_, Real wupperwall_,
                    Real tlowerwall_, Real tupperwall_, 
@@ -19,14 +19,17 @@ DDCFlags::DDCFlags(Real Rey_, Real Pr_, Real Ra_, Real Le_, Real Rrho_, Real Rse
       Le(Le_),
       Rrho(Rrho_),
       Rsep(Rsep_),
-      Ri(Ri_),
-
+      Ri(Ri_),  
+      gammax(gammax_),
+      gammaz(gammaz_),
       
       
       tlowerwall(tlowerwall_),
       tupperwall(tupperwall_),
       slowerwall(slowerwall_),
       supperwall(supperwall_),
+
+      
       ystats(ystats_) {
     
     ulowerwall = ulowerwall_;
@@ -51,6 +54,8 @@ DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     const Real Rrho_ = args.getreal("-Rr", "--Rrho", 2, "Density stability ratio");
     const Real Rsep_ = args.getreal("-Rs", "--Rsep", 1, "Separation ratio for binary fluid convection");
     const Real Ri_ = args.getreal("-Ri", "--Richardson", 10, "Richardson number");
+    const Real gammax_ = args.getreal("-GammaX", "--GammaX", 0, "Gamma angle in X");
+    const Real gammaz_ = args.getreal("-GammaZ", "--GammaZ", 0, "Gamma angle in Z");
     
     // define Channelflow boundary conditions from arglist
     args2BC(args);
@@ -77,6 +82,8 @@ DDCFlags::DDCFlags(ArgList& args, const bool laurette) {
     Rrho = Rrho_;
     Rsep = Rsep_;
     Ri = Ri_;
+    gammax = gammax_ / 180.0 * pi;
+    gammaz = gammaz_ / 180.0 * pi;
 
     nu = 1.0 / Rey; // get kinematic viscosity of system, but this 
 
@@ -133,6 +140,8 @@ void DDCFlags::save(const std::string& savedir) const {
            << std::setw(REAL_IOWIDTH) << Rrho << "  %Rrho\n"
            << std::setw(REAL_IOWIDTH) << Rsep << "  %Rsep\n"
            << std::setw(REAL_IOWIDTH) << Ri << "  %Ri\n"
+           << std::setw(REAL_IOWIDTH) << gammax << "  %GammaX\n"
+           << std::setw(REAL_IOWIDTH) << gammaz << "  %GammaZ\n"
            << std::setw(REAL_IOWIDTH) << uupperwall << "  %uupperwall\n"
            << std::setw(REAL_IOWIDTH) << ulowerwall << "  %ulowerwall\n"
            << std::setw(REAL_IOWIDTH) << wupperwall << "  %wupperwall\n"
@@ -161,6 +170,8 @@ void DDCFlags::load(int taskid, const std::string indir) {
     Rrho = getRealfromLine(taskid, is);
     Rsep = getRealfromLine(taskid, is);
     Ri = getRealfromLine(taskid, is);
+    gammax = getRealfromLine(taskid, is);
+    gammaz = getRealfromLine(taskid, is);
     uupperwall = getRealfromLine(taskid, is);
     ulowerwall = getRealfromLine(taskid, is);
     wupperwall = getRealfromLine(taskid, is);

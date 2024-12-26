@@ -71,7 +71,7 @@ class DDE : public NSE {
     ChebyCoeff Sbase_;    // salinity base profile (physical)
     ChebyCoeff Sbaseyy_;  // 2. deriv. of salinity base profile
 
-    ChebyCoeff Pbasey_;  //  wall normal pressure gradient (y-dependent)
+    ChebyCoeff Pbasey_;  //  hydrostatic pressure gradient profile in Y (y-dependent)
 
     // constant terms
     ComplexChebyCoeff Cu_;  // constant
@@ -100,9 +100,8 @@ class DDE : public NSE {
 
 // Construct laminar flow profile for given flow parameters.
 // [a,b]   == y position of [lower, upper] walls
-// ChebyCoeff ShearVelocityProfile(Real a, Real b, int Ny, DDCFlags flags);
-ChebyCoeff laminarVelocityProfile(Real dPdx, Real Ubulk, Real Ua, Real Ub, Real a, Real b, int Ny,
-                                  DDCFlags flags);
+
+ChebyCoeff laminarVelocityProfile(Real gammax, Real dPdx, Real Ubulk, Real Ua, Real Ub, Real a, Real b, int Ny, DDCFlags flags);
 ChebyCoeff linearTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags);
 // ChebyCoeff stairTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags);
 ChebyCoeff linearSalinityProfile(Real a, Real b, int Ny, DDCFlags flags);
