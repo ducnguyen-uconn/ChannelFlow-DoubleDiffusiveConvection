@@ -35,20 +35,25 @@ std::vector<Real> ddcstats(const FlowField& u, const FlowField& temp, const Flow
     Real KE = 0.5*L2Norm2(u); stats.push_back(KE);
     Real PE = 0.5*flags.Ri*L2Norm2(temp); stats.push_back(PE);
     stats.push_back(KE+PE);
+    stats.push_back(dissipation(u_tot));
 
     stats.push_back(wallshearUpper(u_tot)); // for Langham2019JFM
+    stats.push_back(wallshear(u_tot)); // I
+    stats.push_back(L2Norm(u));
+    stats.push_back(L2Norm(u_tot));
+    stats.push_back(L2Norm3d(u));
+    stats.push_back(Ecf(u));
+    stats.push_back(getUbulk(u));
+    stats.push_back(getWbulk(u));
 
-    // stats.push_back(L2Norm(u));
-    // stats.push_back(heatcontent(temp_tot, flags));// averaged temp
-    // stats.push_back(saltcontent(salt_tot, flags));// averaged salt
-    // stats.push_back(L2Norm(u_tot));
-    // stats.push_back(L2Norm(temp));
-    // stats.push_back(L2Norm(temp_tot));
-    // stats.push_back(L2Norm(salt));
-    // stats.push_back(L2Norm(salt_tot));
-    // stats.push_back(L2Norm3d(u));
-    // stats.push_back(Ecf(u));
-    // stats.push_back(wallshear(u_tot));
+    stats.push_back(L2Norm(temp));
+    stats.push_back(L2Norm(temp_tot));
+    stats.push_back(heatcontent(temp_tot, flags));// averaged temp
+
+    stats.push_back(L2Norm(salt));
+    stats.push_back(L2Norm(salt_tot));
+    stats.push_back(saltcontent(salt_tot, flags));// averaged salt
+    
     return stats;
 }
 
@@ -57,22 +62,24 @@ string ddcfieldstatsheader(const DDCFlags flags) {
     header  << setw(14) << "KinEnergy"
             << setw(14) << "PotEnergy"
             << setw(14) << "TotEnergy"
-            << setw(14) << "wallshearUpper" 
+            << setw(14) << "Dissipation"
 
-            // << setw(14) << "L2(u')" 
-            // << setw(10) << "<T>(y=" << flags.ystats << ")"  // change position with L2(T')
-            // << setw(14) << "L2(u)" 
-            // << setw(14) << "L2(T)" 
-            // << setw(14) << "e3d" 
-            // << setw(14) << "ecf" 
-            // << setw(14) << "ubulk" 
-            // << setw(14) << "wbulk" 
-            // << setw(14) << "wallshear" 
-            // << setw(14) << "buoyPowIn" 
-            // << setw(14) << "totalDiss" 
-            // << setw(14) << "heatinflux" 
-            // << setw(14) << "L2(T')" 
-            // << setw(10) << "Nu(y=" << flags.ystats << ")"
+            << setw(14) << "wshearUpper" 
+            << setw(14) << "wallshear" 
+            << setw(14) << "L2(u')" 
+            << setw(14) << "L2(u)" 
+            << setw(14) << "e3d" 
+            << setw(14) << "ecf" 
+            << setw(14) << "ubulk" 
+            << setw(14) << "wbulk" 
+
+            << setw(14) << "L2(T')" 
+            << setw(14) << "L2(T)" 
+            << setw(10) << "<T>(y=" << flags.ystats << ")" 
+
+            << setw(14) << "L2(S')" 
+            << setw(14) << "L2(S)" 
+            << setw(10) << "<S>(y=" << flags.ystats << ")"
             ;
     return header.str();
 }
@@ -610,6 +617,22 @@ void ddcDSI::updateMu(Real mu) {
         Lz_ = mu;
     }else if (ddc_cPar_ == ddc_continuationParameter::Ri) {
         ddcflags_.Ri = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Rrho) {
+        ddcflags_.Rrho = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Pr) {
+        ddcflags_.Pr = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Ra) {
+        ddcflags_.Ra = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Le) {
+        ddcflags_.Le = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Rsep) {
+        ddcflags_.Rsep = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::Rey) {
+        ddcflags_.Rey = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::gammax) {
+        ddcflags_.gammax = mu;
+    }else if (ddc_cPar_ == ddc_continuationParameter::gammaz) {
+        ddcflags_.gammaz = mu;
     }else {
         throw invalid_argument("ddcDSI::updateMu(): continuation parameter is unknown");
     }
@@ -636,6 +659,30 @@ void ddcDSI::chooseMuDDC(ddc_continuationParameter mu) {
         case ddc_continuationParameter::Ri:
             updateMu(ddcflags_.Ri);
             break;
+        case ddc_continuationParameter::Rrho:
+            updateMu(ddcflags_.Rrho);
+            break;
+        case ddc_continuationParameter::Pr:
+            updateMu(ddcflags_.Pr);
+            break;
+        case ddc_continuationParameter::Ra:
+            updateMu(ddcflags_.Ra);
+            break;
+        case ddc_continuationParameter::Le:
+            updateMu(ddcflags_.Le);
+            break;
+        case ddc_continuationParameter::Rsep:
+            updateMu(ddcflags_.Rsep);
+            break;
+        case ddc_continuationParameter::Rey:
+            updateMu(ddcflags_.Rey);
+            break;
+        case ddc_continuationParameter::gammax:
+            updateMu(ddcflags_.gammax);
+            break;
+        case ddc_continuationParameter::gammaz:
+            updateMu(ddcflags_.gammaz);
+            break;
         case ddc_continuationParameter::none:
             throw invalid_argument(
                 "ddcDSI::chooseMu(): continuation parameter is none, we should not reach this point");
@@ -652,6 +699,22 @@ ddc_continuationParameter ddcDSI::s2ddc_cPar(string muname) {
         return ddc_continuationParameter::Lz;
     else if (muname == "ri")
         return ddc_continuationParameter::Ri;
+    else if (muname == "rrho")
+        return ddc_continuationParameter::Rrho;
+    else if (muname == "pr")
+        return ddc_continuationParameter::Pr;
+    else if (muname == "ra")
+        return ddc_continuationParameter::Ra;
+    else if (muname == "le")
+        return ddc_continuationParameter::Le;
+    else if (muname == "rsep")
+        return ddc_continuationParameter::Rsep;
+    else if (muname == "rey")
+        return ddc_continuationParameter::Rey;
+    else if (muname == "gammax")
+        return ddc_continuationParameter::gammax;
+    else if (muname == "gammaz")
+        return ddc_continuationParameter::gammaz;
     else {
         cout << "ddcDSI::s2ddc_cPar(): ddc_continuation parameter '"+muname+"' is unknown, defaults to 'none'" << endl;
         return ddc_continuationParameter::none;
@@ -669,6 +732,22 @@ string ddcDSI::ddc_cPar2s(ddc_continuationParameter ddc_cPar) {
         return "Lz";
     else if (ddc_cPar == ddc_continuationParameter::Ri)
         return "Ri";
+    else if (ddc_cPar == ddc_continuationParameter::Rrho)
+        return "Rrho";
+    else if (ddc_cPar == ddc_continuationParameter::Pr)
+        return "Pr";
+    else if (ddc_cPar == ddc_continuationParameter::Ra)
+        return "Ra";
+    else if (ddc_cPar == ddc_continuationParameter::Le)
+        return "Le";
+    else if (ddc_cPar == ddc_continuationParameter::Rsep)
+        return "Rsep";
+    else if (ddc_cPar == ddc_continuationParameter::Rey)
+        return "Rey";
+    else if (ddc_cPar == ddc_continuationParameter::gammax)
+        return "gammax";
+    else if (ddc_cPar == ddc_continuationParameter::gammaz)
+        return "gammaz";
     else
         throw invalid_argument("ddcDSI::ddc_cPar2s(): continuation parameter is not convertible to string");
 }
