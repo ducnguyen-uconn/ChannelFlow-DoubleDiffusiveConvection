@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 
         args.section("Program options");
         const string muname = args.getstr("-cont", "--continuation", "Lx",
-                                          "continuation parameter, one of [Ra, Pr, Le, Rrho, Lx, Lz, H]");
+                                          "continuation parameter, one of [Pr, Ra, Ri, Rrho, Rsep, Le, Rey, Lx, Lz, gammax, gammaz]");
         const string sigmastr =
             args.getstr("-sigma", "--sigma", "", "file containing sigma of sigma f^T(u) - u = 0 (default == identity)");
         const Real Unormalize = args.getreal("-un", "--unormalize", 0.0, "lower bound in energy for search");
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
         args.check();
 
         if (muname == "") {
-            cerr << "Please choose --continuation with one of [Ra, Pr, Le, Rrho, Lx, Lz, H]"
+            cerr << "Please choose --continuation with one of [Pr, Ra, Ri, Rrho, Rsep, Le, Rey, Lx, Lz, gammax, gammaz]"
                  << endl;
             exit(1);
         }

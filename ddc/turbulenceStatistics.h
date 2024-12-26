@@ -96,7 +96,7 @@ namespace chflow {
         private:
         Vector temp_m;// horizontally averaged profile of temperature [<T>h]
         Vector salt_m;// horizontally averaged profile of salinity [<S>h]
-        // horizontally averaged profile of density [<S-T>h+(1-Rrho)y]
+        // horizontally averaged profile of density [<S-Rrho*T>h/(1-Rrho)]
 
         Vector temp_grad;// horizontally averaged profile of temperature gradient [<dT/dy>h]
         Vector salt_grad;// horizontally averaged profile of salinity gradient [<dS/dy>h]

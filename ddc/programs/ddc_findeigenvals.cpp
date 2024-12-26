@@ -72,8 +72,8 @@ int main(int argc, char* argv[]) {
         const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
 
         const string uname = args.getstr(3, "<flowfield>", "filename for EQB, TW, or PO velocity solution");
-        const string tname = args.getstr(2, "<flowfield>", "filename of EQB, TW, or PO temperature solution");
-        const string sname = args.getstr(1, "<flowfield>", "filename of EQB, TW, or PO salinity solution");
+        const string tname = args.getstr(2, "<flowfield>", "filename for EQB, TW, or PO temperature solution");
+        const string sname = args.getstr(1, "<flowfield>", "filename for EQB, TW, or PO salinity solution");
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
