@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
             u += s[i](u);
 
         u *= magn / L2Norm(u);
-        // u.setPadded(true);
+        u.setPadded(true);
         u.save(EQname);
 
 
@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
             temp += s[i](temp);
 
         temp *= 0.01 / L2Norm(temp);
-        // temp.setPadded(true);
+        temp.setPadded(true);
         temp.save("t");
     }
     cfMPI_Finalize();
