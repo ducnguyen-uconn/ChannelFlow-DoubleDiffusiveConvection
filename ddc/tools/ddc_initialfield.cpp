@@ -83,21 +83,21 @@ int main(int argc, char* argv[]) {
             addSinusoidalPerturbations(salt,-0.05,6.0);
             #endif
         } else{// mormal mode
-            // addRandomPerturbations(u,1e-3);
-            // #ifdef P5
-            // addRandomPerturbations(temp,1e-3);
-            // #endif
-            // #ifdef P6
-            // addRandomPerturbations(salt,1e-3);
-            // #endif
-
-            addSinusoidalPerturbations(u,-0.2,1.0);
+            addRandomPerturbations(u,1e-3);
             #ifdef P5
-            addSinusoidalPerturbations(temp,-0.1,1.0);
+            addRandomPerturbations(temp,1e-3);
             #endif
             #ifdef P6
-            addSinusoidalPerturbations(salt,-0.1,1.0);
+            addRandomPerturbations(salt,1e-3);
             #endif
+
+            // addSinusoidalPerturbations(u,-0.2,1.0);
+            // #ifdef P5
+            // addSinusoidalPerturbations(temp,-0.1,1.0);
+            // #endif
+            // #ifdef P6
+            // addSinusoidalPerturbations(salt,-0.1,1.0);
+            // #endif
         }
         cout << "done" << endl;
         u.setPadded(true);
