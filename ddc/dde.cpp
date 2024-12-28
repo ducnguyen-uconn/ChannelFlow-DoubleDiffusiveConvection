@@ -21,7 +21,7 @@ void momentumNL(const FlowField& u, const FlowField& T, const FlowField& S,
     Real Rsep = flags.Rsep;
     Real Ri = flags.Ri;
     Real sgammax = sin(flags.gammax);
-    Real cgammax = sin(flags.gammax);
+    Real cgammax = cos(flags.gammax);
 
     // compute the nonlinear term of NSE in the usual Channelflow style
     navierstokesNL(u, Ubase, Wbase, f, tmp, flags);
