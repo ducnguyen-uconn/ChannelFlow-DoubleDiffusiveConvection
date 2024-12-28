@@ -30,6 +30,14 @@
 // #define P5 1.0/sqrt(Pr*Ra)
 // #define P6 1.0/(Le*sqrt(Pr*Ra))
 
+// velocity is normalized by boundary velocity Ub
+#define P1 1.0/Rey
+#define P2 Ri/(Rrho-1)
+#define P3 1.0
+#define P4 Rrho
+#define P5 1.0/(Rey*Pr)
+#define P6 1.0/(Le*Rey*Pr)
+
 
 // Example 3: Binary fluid convection [Mercader2013JFM]: p1 = Pr, p2 = Ra, p3 = 1+Rsep, p4 = 1, p5 = 1, p6 = 1.0/Le, p7 = 1
 // #define P1 Pr 
@@ -52,12 +60,13 @@
 // #define P5 (1.0/(Rey*Pr))
 
 // Example 6: RBC [Zheng JFM 2024]
-#define P1 sqrt(Pr/Ra) 
-#define P2 1.0
-#define P3 1.0
-#define P5 1.0/sqrt(Pr*Ra)
+// #define P1 sqrt(Pr/Ra) 
+// #define P2 1.0
+// #define P3 1.0
+// #define P5 1.0/sqrt(Pr*Ra)
 
 // #define FREESLIP
 // #define SAVESTATS
 // #define EAVES2016JFM
+#define FREEZEvelocity
 #endif
