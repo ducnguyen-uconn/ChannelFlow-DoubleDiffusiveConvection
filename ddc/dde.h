@@ -103,7 +103,6 @@ class DDE : public NSE {
 
 ChebyCoeff laminarVelocityProfile(Real gammax, Real dPdx, Real Ubulk, Real Ua, Real Ub, Real a, Real b, int Ny, DDCFlags flags);
 ChebyCoeff linearTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags);
-// ChebyCoeff stairTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags);
 ChebyCoeff linearSalinityProfile(Real a, Real b, int Ny, DDCFlags flags);
 ChebyCoeff hydrostaticPressureGradientY(ChebyCoeff Tbase, ChebyCoeff Sbase, DDCFlags flags);
 

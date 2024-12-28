@@ -1036,41 +1036,7 @@ ChebyCoeff linearTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags) {
     }
     return T;
 }
-// ChebyCoeff stairTemperatureProfile(Real a, Real b, int Ny, DDCFlags flags) {
-//     MeanConstraint constraint = flags.constraint;
 
-//     ChebyCoeff T(Ny, a, b, Spectral);
-//     Real Vsuck = flags.Vsuck;
-//     Real dPdx = flags.dPdx;
-//     Real Ta = flags.tlowerwall;
-//     Real Tb = flags.tupperwall;
-
-//     Real h = b-a;
-//     Real c = 0.5*(b-a);
-//     Real d = 0.5*(b+a);
-
-//     Real R = 20;
-//     Real p1 = -R;
-//     Real p3 = R*R*R/3;
-
-//     if (constraint == BulkVelocity) {
-//         cferror("Using DDC with constraint BulkVelocity is not implemented yet");
-//     } else {
-//         if (Vsuck < 1e-14) {
-//             if (dPdx < 1e-14) {
-//                 T[0] = (d-a)/h * (Tb - Ta) + Ta;  
-//                 T[1] = (d-a)/h * (Tb - Ta);
-//                 T[2] = (d-a)/h * (Tb - Ta);
-//                 T[3] = ;
-//             } else {
-//                 cferror("Using DDC with nonzero dPdx is not implemented yet");
-//             }
-//         } else {
-//             cferror("Using DDC with SuctionVelocity is not implemented yet");
-//         }
-//     }
-//     return T;
-// }
 ChebyCoeff linearSalinityProfile(Real a, Real b, int Ny, DDCFlags flags) {
     MeanConstraint constraint = flags.constraint;
 
