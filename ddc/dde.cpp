@@ -969,7 +969,7 @@ ChebyCoeff laminarVelocityProfile(Real gammax, Real dPdx, Real Ubulk, Real Ua, R
     Real p2 = -1.0*P2*sgammax/(2.0*P1) * (P3*pt0-P4*ps0);
     Real p1 = (Ub-Ua)/h 
             + P2*sgammax/(2.0*P1*h)*(1.0/3.0*(P3*pt1-P4*ps1)*minor3 + (P3*pt0-P4*ps0)*minor2);
-    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h)
+    Real p0 = 0.5*((Ub+Ua)-(Ub-Ua)*(b+a)/h)
             + P2*sgammax/(12.0*P1)*(P3*pt1-P4*ps1)*(plus3-minor3*(b+a)/h)
             + P2*sgammax/(4.0*P1)*(P3*pt0-P4*ps0)*(plus2-minor2*(b+a)/h);
     #elif defined(P5)
@@ -977,14 +977,14 @@ ChebyCoeff laminarVelocityProfile(Real gammax, Real dPdx, Real Ubulk, Real Ua, R
     Real p2 = -1.0*P2*sgammax/(2.0*P1) * (P3*pt0);
     Real p1 = (Ub-Ua)/h 
             + P2*sgammax/(2.0*P1*h)*(1.0/3.0*(P3*pt1)*minor3 + (P3*pt0)*minor2);
-    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h)
+    Real p0 = 0.5*((Ub+Ua)-(Ub-Ua)*(b+a)/h)
             + P2*sgammax/(12.0*P1)*(P3*pt1)*(plus3-minor3*(b+a)/h)
             + P2*sgammax/(4.0*P1)*(P3*pt0)*(plus2-minor2*(b+a)/h);
     #else
     Real p3 = 0;
     Real p2 = 0;
     Real p1 = (Ub-Ua)/h;
-    Real p0 = 0.5*((Ub-Ua)-(Ub-Ua)*(b+a)/h);
+    Real p0 = 0.5*((Ub+Ua)-(Ub-Ua)*(b+a)/h);
     #endif
     // printf("%f*y^3+%f*y^2+%f*y+%f\n",p3,p2,p1,p0);fflush(stdout);
 
