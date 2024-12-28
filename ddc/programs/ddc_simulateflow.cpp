@@ -161,16 +161,11 @@ int main(int argc, char* argv[]) {
         #endif
         #endif
 
-        // FlowField u0 = u;
+        #ifdef FREEZEvelocity
+        FlowField u0 = u;
+        #endif
         int count=0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
-            // cout << "         t == " << t << endl;
-            // cout << "       CFL == " << ddc.CFL(fields[0]) << endl;
-            // cout << " L2Norm(u) == " << L2Norm(fields[0]) << endl;
-            // cout << "divNorm(u) == " << divNorm(fields[0]) << endl;
-            // cout << "      dPdx == " << ddc.dPdx() << endl;
-            // cout << "     Ubulk == " << ddc.Ubulk() << endl;
-
             string s;
             s = printdiagnostics(fields[0], ddc, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm, pdissip,
                                  pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
@@ -210,13 +205,13 @@ int main(int argc, char* argv[]) {
             }
             count+=1;
 
-            // for debug
-            // for (int step = 0; step < dt.n(); ++step) {
-            //     fields[0] = u0;
-            //     cout << "." << flush;
-            //     ddc.advance(fields, 1);
-            // }  // End of time stepping loop
-            // for debug
+            #ifdef FREEZEvelocity
+            for (int step = 0; step < dt.n(); ++step) {
+                fields[0] = u0;
+                cout << "." << flush;
+                ddc.advance(fields, 1);
+            }  // End of time stepping loop
+            #else
 
             // Take n steps of length dt
             #ifndef FREESLIP
@@ -228,6 +223,8 @@ int main(int argc, char* argv[]) {
                 freeslipBC(fields);// add free-slip boundary conditions
                 ddc.advance(fields, 1);
             }  // End of time stepping loop
+            #endif
+
             #endif
 
             if (dt.variable() &&
