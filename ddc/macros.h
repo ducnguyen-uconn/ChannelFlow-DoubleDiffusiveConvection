@@ -68,5 +68,5 @@
 // #define FREESLIP
 // #define SAVESTATS
 // #define EAVES2016JFM
-#define FREEZEvelocity
+// #define FREEZEvelocity
 #endif
