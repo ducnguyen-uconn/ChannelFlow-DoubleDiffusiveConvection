@@ -8,6 +8,7 @@ set(tool_APPS
   ddc_initialfield
   ddc_randomfield
   ddc_readEQ
+  ddc_changegrid
   )
 
 foreach (program ${tool_APPS})
