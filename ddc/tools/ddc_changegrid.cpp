@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         const string u1name = args.getstr(1, "<outfield>", "output flow field");
 
         args.check();
-        args.save("./");
+        args.save("./"); 
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
         FlowField u0(u0name, cfmpi);
