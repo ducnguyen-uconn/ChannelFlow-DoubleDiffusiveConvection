@@ -10,6 +10,7 @@
 #include "channelflow/symmetry.h"
 #include "channelflow/utilfuncs.h"
 #include "cfbasics/mathdefs.h"
+#include "modules/ddc/macros.h"
 using namespace std;
 using namespace chflow;
 
@@ -21,7 +22,7 @@ int main(int argc, char* argv[]) {
         
         
         ArgList args(argc, argv, purpose);
-        
+        const bool padded = args.getbool("-p", "--padded", false, "set padding modes to zero");
         const string symmstr = args.getstr("-symms", "--symmetries", "", "file of symmetries to satisfy");
         
         const string EQname = args.getstr(1, "<fieldname>", "equilibria file");
@@ -72,10 +73,10 @@ int main(int argc, char* argv[]) {
             u += s[i](u);
 
         u *= magn / L2Norm(u);
-        u.setPadded(true);
+        u.setPadded(padded);
         u.save(EQname);
 
-
+        #ifdef P5
         FlowField temp(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
         temp.addPerturbations(temp.kxmaxDealiased(), temp.kzmaxDealiased(), 1.0, 0.5);
 
@@ -83,8 +84,21 @@ int main(int argc, char* argv[]) {
             temp += s[i](temp);
 
         temp *= 0.01 / L2Norm(temp);
-        temp.setPadded(true);
+        temp.setPadded(padded);
         temp.save("t");
+        #endif
+
+        #ifdef P6
+        FlowField salt(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
+        salt.addPerturbations(salt.kxmaxDealiased(), salt.kzmaxDealiased(), 1.0, 0.5);
+
+        for (int i = 0; i < s.length(); ++i)
+            salt += s[i](salt);
+
+        salt *= 0.01 / L2Norm(salt);
+        salt.setPadded(padded);
+        salt.save("s");
+        #endif 
     }
     cfMPI_Finalize();
 }

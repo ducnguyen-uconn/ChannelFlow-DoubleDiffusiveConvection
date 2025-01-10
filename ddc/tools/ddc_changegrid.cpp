@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         string purpose("interpolate a given flowfield onto a different grid");
         ArgList args(argc, argv, purpose);  // Assign parameters
 
-        const bool padded = args.getbool("-p", "--padded", true, "set padding modes to zero");
+        const bool padded = args.getbool("-p", "--padded", false, "set padding modes to zero");
         const bool fixdiv = args.getbool("-dv", "--divergence", true, "fix divergence and Dirichlet BCs");
         const int Nxarg = args.getint("-Nx", "--Nx", 0, "new # x gridpoints [default==no change]");
         const int Nyarg = args.getint("-Ny", "--Ny", 0, "new # y gridpoints [default==no change]");

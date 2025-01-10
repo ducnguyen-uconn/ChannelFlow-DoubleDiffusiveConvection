@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
 
         ArgList args(argc, argv, purpose);
         const string modelabel = args.getstr("-m", "--modelabel", "nor", "problem/mode of initial conditions");
+        const bool padded = args.getbool("-p", "--padded", false, "set padding modes to zero");
         const int Nx = args.getint("-Nx", "--Nx", "# x gridpoints");
         const int Ny = args.getint("-Ny", "--Ny", "# y gridpoints");
         const int Nz = args.getint("-Nz", "--Nz", "# z gridpoints");
@@ -41,11 +42,16 @@ int main(int argc, char* argv[]) {
         const string symmstr = args.getstr("-symms", "--symmetries", "", "file of symmetries to satisfy");
 
         
-        
+        #if defined(P6)
         const string uname = args.getstr(3, "<fieldname>", "output velocity file");
         const string tname = args.getstr(2, "<fieldname>", "output temperature file");
         const string sname = args.getstr(1, "<fieldname>", "output salinity file");
-        
+        #elif defined(P5)
+        const string uname = args.getstr(2, "<fieldname>", "output velocity file");
+        const string tname = args.getstr(1, "<fieldname>", "output temperature file");
+        #else
+        const string uname = args.getstr(1, "<fieldname>", "output velocity file");
+        #endif
         
         args.check();
         args.save("./");
@@ -82,7 +88,15 @@ int main(int argc, char* argv[]) {
             #ifdef P6
             addSinusoidalPerturbations(salt,-0.05,6.0);
             #endif
-        } else{// mormal mode
+        } else if (modelabel=="sin"){
+            addSinusoidalPerturbations(u,-2*magn,1.0);
+            #ifdef P5
+            addSinusoidalPerturbations(temp,-magn,1.0);
+            #endif
+            #ifdef P6
+            addSinusoidalPerturbations(salt,-magn,1.0);
+            #endif
+        } else{// random mode
             addRandomPerturbations(u,1e-3);
             #ifdef P5
             addRandomPerturbations(temp,1e-3);
@@ -90,22 +104,18 @@ int main(int argc, char* argv[]) {
             #ifdef P6
             addRandomPerturbations(salt,1e-3);
             #endif
-
-            // addSinusoidalPerturbations(u,-0.2,1.0);
-            // #ifdef P5
-            // addSinusoidalPerturbations(temp,-0.1,1.0);
-            // #endif
-            // #ifdef P6
-            // addSinusoidalPerturbations(salt,-0.1,1.0);
-            // #endif
         }
         cout << "done" << endl;
-        u.setPadded(true);
+        u.setPadded(padded);
         u.save(uname);
-        temp.setPadded(true);
+        #ifdef P5
+        temp.setPadded(padded);
         temp.save(tname);
-        salt.setPadded(true);
+        #endif
+        #ifdef P6
+        salt.setPadded(padded);
         salt.save(sname);
+        #endif
     }
     cfMPI_Finalize();
 }

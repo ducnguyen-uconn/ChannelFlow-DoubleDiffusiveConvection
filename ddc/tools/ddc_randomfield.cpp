@@ -9,7 +9,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/symmetry.h"
 #include "channelflow/utilfuncs.h"
-
+#include "modules/ddc/macros.h"
 using namespace std;
 using namespace chflow;
 
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
             "u = magnitude/L2Norm(u)");
 
         ArgList args(argc, argv, purpose);
-
+        const bool padded = args.getbool("-p", "--padded", false, "set padding modes to zero");
         const int Nx = args.getint("-Nx", "--Nx", "# x gridpoints");
         const int Ny = args.getint("-Ny", "--Ny", "# y gridpoints");
         const int Nz = args.getint("-Nz", "--Nz", "# z gridpoints");
@@ -42,10 +42,16 @@ int main(int argc, char* argv[]) {
         const bool meanfl = args.getflag("-mf", "--meanflow", "perturb the mean");
 
         const string symmstr = args.getstr("-symms", "--symmetries", "", "file of symmetries to satisfy");
-
+        #if defined(P6)
         const string uname = args.getstr(3, "<fieldname>", "output velocity file");
         const string tname = args.getstr(2, "<fieldname>", "output temperature file");
         const string sname = args.getstr(1, "<fieldname>", "output salinity file");
+        #elif defined(P5)
+        const string uname = args.getstr(2, "<fieldname>", "output velocity file");
+        const string tname = args.getstr(1, "<fieldname>", "output temperature file");
+        #else
+        const string uname = args.getstr(1, "<fieldname>", "output velocity file");
+        #endif
         args.check();
         args.save("./");
 
@@ -66,9 +72,10 @@ int main(int argc, char* argv[]) {
             u += s[i](u);
 
         u *= magn / L2Norm(u);
-        u.setPadded(true);
+        u.setPadded(padded);
         u.save(uname);
 
+        #ifdef P5
         FlowField temp(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
         temp.addPerturbations(temp.kxmaxDealiased(), temp.kzmaxDealiased(), 1.0, smooth);
 
@@ -76,19 +83,21 @@ int main(int argc, char* argv[]) {
             temp += s[i](temp);
 
         temp *= magn / L2Norm(temp);
-        temp.setPadded(true);
+        temp.setPadded(padded);
         temp.save(tname);
+        #endif
 
+        #ifdef P6
         FlowField salt(Nx, Ny, Nz, 1, Lx, Lz, ymin, ymax);
         salt.addPerturbations(salt.kxmaxDealiased(), salt.kzmaxDealiased(), 1.0, smooth);
-        
 
         for (int i = 0; i < s.length(); ++i)
             salt += s[i](salt);
 
         salt *= magn / L2Norm(salt);
-        salt.setPadded(true);
+        salt.setPadded(padded);
         salt.save(sname);
+        #endif
     }
     cfMPI_Finalize();
 }
