@@ -1,4 +1,4 @@
-<h2 style="text-align:center;">Double-Diffusive Convection: An Extension Module of Channelflow 2.0</h2>
+<h2 style="text-align:center;">Channelflow-DDC: An Extension Module of Channelflow 2.0</h2>
 
 ![Stratified density of sheared double-diffusive convection](images/stratified_density.png)
 
@@ -13,22 +13,31 @@ $$\begin{align}
 
 where $\boldsymbol{U}$, $T$, and $S$ are the total velocity, first scalar (temperature/density), and second scalar (salinity/concentration) fields, respectively. The $\gamma$ is the inclined angle between downward vertical direction and gravity $\boldsymbol{g}=g\hat{\boldsymbol{g}}=g(\sin{\gamma}\hat{\mathbf{e}}_x+\cos{\gamma}\hat{\mathbf{e}}_y)$. Also, $p_i$ is controlling parameter to define the given governing equations via a header file `ddc/macros.h`. We suggest some wall-bounded fluid flow systems as:
 
-| Parameters | Double-diffusive convection (Singh & Srinivasan [2014](https://doi.org/10.1063/1.4882264)) | Sheared double-diffusive convection (Yang et al. JFM [2021](https://doi.org/10.1017/jfm.2021.1091)) | Binary fluid convection (Mercader et al. JFM [2013](https://doi.org/10.1017/jfm.2013.77)) | Stratified plane Couette flow (Langham et al. JFM [2019](https://doi.org/10.1017/jfm.2019.811)) | Inclined layer convection (Zheng et al. JFM [2024](https://doi.org/10.1017/jfm.2024.842)) | Description |
+| Parameters | Double-diffusive convection $U_f=\kappa_T/H$ (Singh & Srinivasan [2014](https://doi.org/10.1063/1.4882264)) | Sheared double-diffusive convection $U_f=\sqrt{g\alpha\Delta_T H}$ (Yang et al. JFM [2021](https://doi.org/10.1017/jfm.2021.1091)) | Sheared double-diffusive convection $U_f=U_w$| Binary fluid convection $U_f=\kappa_T/H$ (Mercader et al. JFM [2013](https://doi.org/10.1017/jfm.2013.77)) | Stratified plane Couette flow $U_f=U_w$ (Langham et al. JFM [2019](https://doi.org/10.1017/jfm.2019.811)) | Inclined layer convection $U_f=\sqrt{g\alpha\Delta_T H}$ (Zheng et al. JFM [2024](https://doi.org/10.1017/jfm.2024.842)) | 
 |:------|:--------|:----------|:----------|:----------|:-----------|:-----------|
-| $p_1$ | $Pr_T$  | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr$ | $1/Re$ | $\sqrt{\frac{Pr_T}{Ra_T}}$ | $Pr_T=\frac{\nu}{\kappa_T}$ is Prandtl number |
-| $p_2$ | $Pr_T Ra_T$  | $\frac{Ri}{R_\rho-1}$ | $Pr_T Ra_T$ | $Re$ | $1$ | $Ra_T=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is Thermal Rayleigh number |
-| $p_3$ | $1$  | $1$ | $1+R_{sep}$ | $-Ri$ | $1$ | $R_{sep}$ is Separation ratio  |
-| $p_4$ | $R_\rho$ | $R_\rho$ | $R_{sep}$ |  |  | $R_\rho=\Lambda=\frac{\beta\Delta_S}{\alpha\Delta_T}$ is Density stability ratio  |
-| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr_T Ra_T}}$ | $1$ | $\frac{1}{RePr}$ |$\frac{1}{\sqrt{Pr_T Ra_T}}$ | $Re=\frac{Uh}{\nu}$ is Raynolds number |
-| $p_6$ | $\frac{1}{Le}$  | $\frac{1}{Le\sqrt{Pr_T Ra_T}}$ | $\frac{1}{Le}$ | | | $Le=\frac{1}{\tau}=\frac{\kappa_T}{\kappa_S}$ is Lewis number |
-| $p_7$ |   |    | $1$  | | | $Ri$ is Richardson number |
+| $p_1$ | $Pr$  | $\sqrt{\frac{Pr}{Ra}}$ | $1/Re$ | $Pr$ | $1/Re$ | $\sqrt{\frac{Pr}{Ra}}$ | 
+| $p_2$ | $Pr Ra$  | $1$  | $\frac{Ri}{\Lambda-1}$ | $Pr Ra$ | $Re$ | $1$ | 
+| $p_3$ | $1$  | $1$  | $1$ | $1+R_{sep}$ | $-Ri$ | $1$ | 
+| $p_4$ | $1/R_\rho$ | $\Lambda$ | $\Lambda$ | $R_{sep}$ |  |  | 
+| $p_5$ | $1$  | $\frac{1}{\sqrt{Pr Ra}}$  | $\frac{1}{RePr}$ | $1$ | $\frac{1}{RePr}$ |$\frac{1}{\sqrt{Pr Ra}}$ | 
+| $p_6$ | $1/Le$ |$\frac{1}{Le\sqrt{Pr Ra}}$ | $\frac{1}{LeRePr}$ | $1/Le$ | | |
+| $p_7$ |   |   |   | $1$  | | | 
+
+Here, $U_f$ is the reference velocity. Dimensionless parameters are:
+- $Ri$ is the Richardson number 
+- $Re=U_w H/\nu$ is the Reynolds number
+- $Pr=\nu/\kappa_T$ is the Prandtl number
+- $Ra=\frac{g\alpha \Delta_T H^3}{\nu\kappa_T}$ is the Rayleigh number
+- $R_\rho=1/\Lambda=\frac{\alpha\Delta_T}{\beta\Delta_S}$ is the Density stability ratio 
+- $R_{sep}$ is the Separation ratio 
+- $Le=1/\tau=\kappa_T/\kappa_S$ is the Lewis number 
 
 A correct defination looks like this
 ```cpp
-// Example: Moving-wall bounded double-diffusive convection [Yang2021JFM]
-// Velocity is normalized by free-fall velocity
+// Example: Moving-wall-bounded double-diffusive convection
+// Velocity is normalized by free-fall velocity $U_f=\sqrt{g\alpha\Delta_T H}$
 #define P1 sqrt(Pr/Ra) 
-#define P2 Ri/(Rrho-1)
+#define P2 1.0
 #define P3 1.0
 #define P4 Rrho
 #define P5 1.0/sqrt(Pr*Ra)
@@ -40,15 +49,15 @@ Notes that if you don't define $p_5$ or $p_6$, scalar's governing equations and 
 
 Read [this](docs/INSTALL.md) to install and set up required libraries of the module on a [HPC](docs/HPCsetup.md). To install the code, first you need to clone code of Channelflow and this repo to your local machine
 ```bash
-git clone https://github.com/epfl-ecps/channelflow.git
+git clone --depth=1 https://github.com/ducnguyen-uconn/ChannelFlow-DoubleDiffusiveConvection.git
 
+cd ./ChannelFlow-DoubleDiffusiveConvection
+git clone --depth=1 https://github.com/epfl-ecps/channelflow.git
 cp ./CMakeLists.txt ./channelflow/CMakeLists.txt
 mkdir -p ./channelflow/modules/
 rm -rf ./channelflow/modules/ddc
 cp -r ./ddc ./channelflow/modules/ddc
-``` 
-and build them
-```bash
+
 mkdir -p build
 cd build
 cmake ../channelflow -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx -DWITH_DDC=ON -DWITH_NSOLVER=ON -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX=/user/local/ -DCMAKE_CXX_FLAGS_RELEASE:STRING=" -fPIC -lfftw3 -lm -Wno-unused-variable " -DWITH_SHARED=OFF -DWITH_HDF5CXX=OFF
