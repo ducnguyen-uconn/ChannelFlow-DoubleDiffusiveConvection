@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
         const Real umin = args.getreal("-u", "--umin", 0.0, "stop if chebyNorm(u) < umin");
 
         const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
+        const int cadence = args.getint("-c", "--cadence", 10, "recompute CFL per c time steps");
         const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
         
         const int nproc0 =
@@ -74,7 +75,7 @@ int main(int argc, char* argv[]) {
         
 
         const string outdir_profiles = args.getpath("-op", "--outdir_profiles", "profiles/", "output directory of mean profiles");
-        const bool savetot = args.getflag("-savetot", "--savetotfields", "save total fields");
+        const bool savetot = args.getflag("-savetot", "--savetotfields", "save total fields instead of perturbations");
 
         const string uname = args.getstr(3, "<flowfield>", "initial guess for the velocity solution");
         const string tname = args.getstr(2, "<flowfield>", "initial guess for the temperature solution");
@@ -164,73 +165,69 @@ int main(int argc, char* argv[]) {
         #ifdef FREEZEvelocity
         FlowField u0 = u;
         #endif
-        int count=0;
-        for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
-            string s;
-            s = printdiagnostics(fields[0], ddc, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm, pdissip,
-                                 pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
-            if (ecfmin > 0 && Ecf(fields[0]) < ecfmin) {
-                cferror("Ecf < ecfmin == " + r2s(ecfmin) + ", exiting");
+        int count=floorf(flags.t0/dt.dT());
+        for (Real t = flags.t0; t <= flags.T; t += cadence*dt.dt()) {
+            // check dt
+            if(floorf(t/dt.dT())>=count){
+                
+                string s;
+                // s = printdiagnostics(fields[0], ddc, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm, pdissip,
+                //                     pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
+                // if (ecfmin > 0 && Ecf(fields[0]) < ecfmin) {
+                //     cferror("Ecf < ecfmin == " + r2s(ecfmin) + ", exiting");
+                // }
+                // cout << s;
+
+                s = ddcfieldstats_t(fields[0], fields[1], fields[2], t, flags);
+                eout << s << endl;
+
+                #ifdef P6
+                #ifdef SAVESTATS
+                meanProfiles.addSnapshot(fields, flags);
+                // save horizontially averaged fields
+                meanProfiles.saveTurbStats(outdir_profiles + "meanprofile" + i2s(int(count)), fields);
+                #endif
+                #endif
+                
+                // Write fields to disk
+                if (saveint != 0 && count % saveint == 0) {
+                    if(!savetot){
+                        fields[0].save(outdir + ulabel + t2s(t, inttime));//<<--- save perturbations
+                        #ifdef P5
+                        fields[1].save(outdir + tlabel + t2s(t, inttime));
+                        #endif
+                        #ifdef P6
+                        fields[2].save(outdir + slabel + t2s(t, inttime));
+                        #endif
+                    }else{
+                        FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save(outdir + ulabel + t2s(t, inttime));//<<--- save total fields
+                        #ifdef P5
+                        FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save(outdir + tlabel + t2s(t, inttime));
+                        #endif
+                        #ifdef P6
+                        FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save(outdir + slabel + t2s(t, inttime));
+                        #endif
+                    }
+                }
+                count+=1;
+
+                cout << "Time = "<< t << ", dt = "<< dt.dt() << ", CFL = " << ddc.CFL(fields[0]) << endl;
             }
-
-            cout << s;
-            s = ddcfieldstats_t(fields[0], fields[1], fields[2], t, flags);
-            eout << s << endl;
-
-            #ifdef P6
-            #ifdef SAVESTATS
-            meanProfiles.addSnapshot(fields, flags);
-            // save horizontially averaged fields
-            meanProfiles.saveTurbStats(outdir_profiles + "meanprofile" + i2s(int(count)), fields);
-            #endif
-            #endif
             
-            // Write velocity and modified pressure fields to disk
-            if(!savetot){
-                fields[0].save(outdir + ulabel + i2s(int(count)));//<<--- save only fluctuations
-                #ifdef P5
-                fields[1].save(outdir + tlabel + i2s(int(count)));
-                #endif
-                #ifdef P6
-                fields[2].save(outdir + slabel + i2s(int(count)));
-                #endif
-            }else{
-                FlowField u_tot = totalVelocity(fields[0], flags); u_tot.save(outdir + ulabel + i2s(int(count)));//<<--- save total fields
-                #ifdef P5
-                FlowField temp_tot = totalTemperature(fields[1], flags); temp_tot.save(outdir + tlabel + i2s(int(count)));
-                #endif
-                #ifdef P6
-                FlowField salt_tot = totalSalinity(fields[2], flags); salt_tot.save(outdir + slabel + i2s(int(count)));
-                #endif
-            }
-            count+=1;
-
             #ifdef FREEZEvelocity
-            for (int step = 0; step < dt.n(); ++step) {
+            for (int step = 0; step < cadence; ++step) {
                 fields[0] = u0;
                 cout << "." << flush;
                 ddc.advance(fields, 1);
-            }  // End of time stepping loop
+            }  
             #else
-
-            // Take n steps of length dt
-            #ifndef FREESLIP
-            ddc.advance(fields, dt.n());
-            #endif
-            #ifdef FREESLIP // this is not really used
-            for (int step = 0; step < dt.n(); ++step) {
-                // cout << "." << flush;
-                freeslipBC(fields);// add free-slip boundary conditions
-                ddc.advance(fields, 1);
-            }  // End of time stepping loop
+            // Take 'cadence' steps
+            ddc.advance(fields, cadence);
             #endif
 
-            #endif
-
-            if (dt.variable() &&
-                dt.adjust(ddc.CFL(fields[0])))  // TODO: dt.variable()==true is checked twice here, remove it.
+            if (dt.variable() && dt.adjust(ddc.CFL(fields[0]))) {
                 ddc.reset_dt(dt);
-            cout << endl;
+            }
         }
     }
     cfMPI_Finalize();
